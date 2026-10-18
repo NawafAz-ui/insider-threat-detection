@@ -1,0 +1,17 @@
+# MongoDB with authentication and separate engine / API accounts (write authorization).
+# 1) set ITD_ROOT_PASSWORD, ITD_ENGINE_PASSWORD, ITD_API_PASSWORD in your shell, 2) docker compose -f docker-compose.secure.yml up -d
+# 3) use the URIs shown in docs/SECURITY.md. The init script only runs on an empty data volume.
+services:
+  mongo:
+    image: mongo:7
+    ports: ["127.0.0.1:27017:27017"]
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: ${ITD_ROOT_PASSWORD:?set ITD_ROOT_PASSWORD}
+      ITD_ENGINE_PASSWORD: ${ITD_ENGINE_PASSWORD:?set ITD_ENGINE_PASSWORD}
+      ITD_API_PASSWORD: ${ITD_API_PASSWORD:?set ITD_API_PASSWORD}
+    volumes:
+      - mongo-secure-data:/data/db      # put this volume on an encrypted disk (docs/SECURITY.md)
+      - ./mongo-init:/docker-entrypoint-initdb.d:ro
+volumes:
+  mongo-secure-data:

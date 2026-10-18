@@ -1,0 +1,7 @@
+# MongoDB for the Database Tier. For the AES-256 requirement, mount a LUKS/BitLocker-encrypted
+# volume at ./mongo-data on the host (see README, "Encrypted storage").
+services:
+  mongo:
+    image: mongo:7
+    ports: ["127.0.0.1:27017:27017"]
+    volumes: ["./mongo-data:/data/db"]

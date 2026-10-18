@@ -1,0 +1,24 @@
+{
+  "_comment": "EXAMPLE ONLY. Run  python -m itd.spedia --inspect logs_SPEDIA.csv  and replace each value with the real column / event-type names.",
+  "time_column": "timestamp",
+  "time_format": null,
+  "user_column": "user",
+  "host_column": "host",
+  "event_type_column": "event_type",
+  "type_map": {
+    "logon": ["logon", "login"],
+    "logoff": ["logoff", "logout"],
+    "device": ["usb", "device"],
+    "email": ["email", "mail"],
+    "file": ["file"],
+    "http": ["http", "web"]
+  },
+  "url_column": "url",
+  "to_column": "recipient",
+  "size_column": "size",
+  "attachments_column": "attachments",
+  "filename_column": "filename",
+  "label_column": "label",
+  "malicious_values": ["1", "true", "malicious"],
+  "session_gap_minutes": 30
+}
