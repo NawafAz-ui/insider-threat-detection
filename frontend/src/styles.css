@@ -68,3 +68,6 @@ tbody tr { cursor: pointer; } tbody tr:hover, tbody tr:focus-visible { backgroun
 .msg.you { align-self: flex-end; background: var(--ink); color: #fff; border-radius: 12px 12px 2px 12px; }
 .msg.assistant { background: #eef3f6; border-radius: 12px 12px 12px 2px; } .msg.error { color: var(--hi); }
 .row { display: flex; gap: 8px; }
+.field-error { color: var(--hi); font-size: .85rem; min-height: 1.2rem; margin-top: 4px; }
+.info { background: #e8f1f8; border: 1px solid #b9d3e6; border-radius: 8px; padding: 8px 12px; margin-top: 12px; font-size: .9rem; }
+input[aria-invalid="true"] { border-color: var(--hi); }

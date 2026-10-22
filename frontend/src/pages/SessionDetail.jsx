@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react";
 import { askAssistant, getSession } from "../api.js";
-import { fmtDate, riskClass, riskLabel } from "../format.js";
+import { fmtDate, riskClass, riskLabel, fmtStd } from "../format.js";
+import { toList } from "../router.js";
 
 const MODEL_NAMES = { lr: "logistic", xgb: "xgboost", iforest: "isolation forest" };
 const C = 2 * Math.PI * 54;
 
-export default function SessionDetail({ id, onBack }) {
+export default function SessionDetail({ id }) {
   const [d, setD] = useState(null);
   const [error, setError] = useState("");
-  useEffect(() => { getSession(id).then(setD).catch((e) => setError(e.message)); }, [id]);
+  const load = () => { setError(""); getSession(id).then(setD).catch((e) => setError(e.status === 404 ? "That session was not found. It may belong to an older run." : e.message)); };
+  useEffect(load, [id]);
 
-  if (error) return <><button className="link" onClick={onBack}>Back to list</button><p className="error" role="alert">{error}</p></>;
+  if (error) return <div><button className="link" onClick={toList}>Back to flagged sessions</button><p className="error" role="alert" style={{ marginTop: 12 }}>{error}</p><button className="btn" style={{ marginTop: 12 }} onClick={load}>Try again</button></div>;
   if (!d) return <p className="muted">Loading session…</p>;
 
   const cls = riskClass(d.risk_score);
@@ -20,7 +22,7 @@ export default function SessionDetail({ id, onBack }) {
 
   return (
     <section>
-      <p className="crumbs"><button className="link" onClick={onBack}>Flagged sessions</button> / {d.user}</p>
+      <p className="crumbs"><button className="link" onClick={toList}>Flagged sessions</button> / {d.user}</p>
       <h1 style={{ marginTop: 6 }}>{d.user} <span className="muted" style={{ fontWeight: 400, fontSize: "1.1rem" }}>{fmtDate(d.start)} to {fmtDate(d.end)} · {mins} min</span></h1>
       <div className="detail">
         <div>
@@ -54,7 +56,7 @@ export default function SessionDetail({ id, onBack }) {
               {d.baseline_deviations.length === 0 ? <p className="muted">Nothing unusual compared with the user's own history.</p> : (
                 <ul className="ev">{d.baseline_deviations.map((b, i) => (
                   <li key={b.metric}>
-                    <span className="tag">B{i + 1}</span>{b.text} <span className="muted">{b.z.toFixed(1)} std above their mean.</span>
+                    <span className="tag">B{i + 1}</span>{b.text} <span className="muted">{fmtStd(b.z)} standard deviations above their mean.</span>
                     <div className="bb"><i style={{ width: `${Math.max(4, Math.min(b.z / 6, 1) * 100)}%` }} /></div>
                   </li>))}</ul>)}
             </div>

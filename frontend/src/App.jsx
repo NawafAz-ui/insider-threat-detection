@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { getUsername, isLoggedIn, logout } from "./api.js";
+import { toList, useRoute } from "./router.js";
 import Login from "./pages/Login.jsx";
 import FlaggedSessions from "./pages/FlaggedSessions.jsx";
 import SessionDetail from "./pages/SessionDetail.jsx";
@@ -7,18 +8,25 @@ import Logo from "./Logo.jsx";
 
 export default function App() {
   const [authed, setAuthed] = useState(isLoggedIn());
-  const [openId, setOpenId] = useState(null);
+  const [notice, setNotice] = useState("");
+  const route = useRoute();
 
-  if (!authed) return <Login onDone={() => setAuthed(true)} />;
+  useEffect(() => {
+    const expired = () => { setAuthed(false); setNotice("Your session expired. Sign in again."); };
+    window.addEventListener("auth-expired", expired);
+    return () => window.removeEventListener("auth-expired", expired);
+  }, []);
+
+  if (!authed) return <Login notice={notice} onDone={() => { setNotice(""); setAuthed(true); }} />;
   return (
     <>
       <header className="bar">
-        <button className="brand" onClick={() => setOpenId(null)}><Logo />Insider Threat Review</button>
+        <button className="brand" onClick={toList}><Logo />Insider Threat Review</button>
         <span className="who">{getUsername()} · Analyst
-          <button className="link" onClick={() => { logout(); setAuthed(false); }}>Sign out</button></span>
+          <button className="link" onClick={() => { logout(); setNotice(""); setAuthed(false); toList(); }}>Sign out</button></span>
       </header>
       <main className="wrap">
-        {openId ? <SessionDetail id={openId} onBack={() => setOpenId(null)} /> : <FlaggedSessions onOpen={setOpenId} />}
+        {route.name === "session" ? <SessionDetail key={route.id} id={route.id} /> : <FlaggedSessions />}
       </main>
     </>
   );

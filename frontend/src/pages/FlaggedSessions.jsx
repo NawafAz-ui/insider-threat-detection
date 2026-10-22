@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { getSessions } from "../api.js";
 import { fmtDate, riskClass, riskLabel } from "../format.js";
+import { toSession } from "../router.js";
 
 const PAGE = 50;
 
-export default function FlaggedSessions({ onOpen }) {
+export default function FlaggedSessions() {
   const [rows, setRows] = useState(null);
   const [meta, setMeta] = useState({ total: 0, threshold: 0, scored: 0, high: 0 });
   const [error, setError] = useState("");
@@ -19,7 +20,7 @@ export default function FlaggedSessions({ onOpen }) {
   }
   useEffect(() => { load(0); }, []);
 
-  if (error) return <p className="error" role="alert">{error}</p>;
+  if (error) return <div><p className="error" role="alert">{error}</p><button className="btn" style={{ marginTop: 12 }} onClick={() => { setError(""); load(0); }}>Try again</button></div>;
   if (!rows) return <p className="muted">Loading flagged sessions…</p>;
   if (rows.length === 0) return <p className="muted">No flagged sessions. Run the detection engine to score new logs.</p>;
 
@@ -40,7 +41,7 @@ export default function FlaggedSessions({ onOpen }) {
           <thead><tr><th>Level</th><th>Risk score</th><th>User</th><th>Session start</th><th>Duration</th><th></th></tr></thead>
           <tbody>
             {rows.map((r) => (
-              <tr key={r.session_id} tabIndex={0} onClick={() => onOpen(r.session_id)} onKeyDown={(e) => e.key === "Enter" && onOpen(r.session_id)}>
+              <tr key={r.session_id} tabIndex={0} onClick={() => toSession(r.session_id)} onKeyDown={(e) => e.key === "Enter" && toSession(r.session_id)}>
                 <td><span className={`pill ${riskClass(r.risk_score)}`}>{riskLabel(r.risk_score)}</span></td>
                 <td><span className="n">{r.risk_score.toFixed(0)}</span><span className="meter"><i className={riskClass(r.risk_score)} style={{ width: `${r.risk_score}%` }} /></span></td>
                 <td className="n">{r.user}</td>
