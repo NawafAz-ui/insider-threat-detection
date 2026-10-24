@@ -177,6 +177,76 @@ def test_spedia_adapter_and_cross_eval(client, tmp_path):
     assert res["shared_features"] and res["cross_dataset_test"]["sessions"] > 0
 
 
+def _auth(client):
+    return {"Authorization": "Bearer " + tok(client).json()["token"]}
+
+
+def test_user_history_endpoint(client):
+    from itd.db import get_db
+    h = _auth(client)
+    first = client.get("/api/sessions", headers=h).json()["sessions"][0]
+    r = client.get(f"/api/users/{first['user']}", headers=h)
+    assert r.status_code == 200
+    d = r.json()
+    starts = [x["start"] for x in d["sessions"]]
+    assert starts == sorted(starts)                                    # oldest first, ready for a timeline
+    assert d["summary"]["sessions"] >= len(d["sessions"]) and d["summary"]["flagged"] >= 1
+    assert d["summary"]["highest_risk"] >= first["risk_score"] - 0.1
+    assert len(d["baseline"]) == 10 and all({"label", "mean", "std"} <= set(b) for b in d["baseline"])
+    assert d["threshold"] > 0
+    assert get_db().access_log.count_documents({"action": "user_viewed"}) >= 1
+
+
+def test_user_history_rejects_bad_input(client):
+    h = _auth(client)
+    assert client.get("/api/users/U9999999", headers=h).status_code == 404
+    assert client.get("/api/users/%24ne", headers=h).status_code == 422
+    assert client.get("/api/users/" + "A" * 65, headers=h).status_code == 422
+    assert client.get("/api/users/U0001").status_code == 401           # no token
+
+
+def test_latest_run_endpoint(client):
+    h = _auth(client)
+    d = client.get("/api/run/latest", headers=h).json()
+    assert d["sessions"] > 0 and d["flagged"] > 0 and d["threshold"] > 0 and d["seconds"] >= 0
+    assert set(d["weights"]) == {"lr", "xgb", "iforest"}
+    assert "risk_engine" in d["metrics"]["test"] and "precision" in d["metrics"]["test"]["risk_engine"]
+    assert client.get("/api/run/latest").status_code == 401
+
+
+def test_offline_answer_is_short_and_focused():
+    from itd import assistant
+    doc = {"risk_score": 88.0,
+           "top_shap": [{"text": "Handled 24 archive (.zip) files (usual 0.0).", "shap": 3.0, "strength": "strong"},
+                        {"text": "Activity rate was 15.7 events per hour.", "shap": 2.0, "strength": "strong"},
+                        {"text": "Session lasted 172 minutes (usual 480).", "shap": 0.2, "strength": "minor"}],
+           "baseline_deviations": [{"text": "Logged on at 21.7h (usual 9.3h).", "z": 10.0}]}
+    general = assistant._template_answer(doc, "Why was this flagged?")
+    assert len(general["answer"]) < 700 and "SHAP" not in general["answer"]
+    assert "S3" not in general["fields_used"] and "R" in general["fields_used"]      # minor reason left out
+    assert "10 or more" in general["answer"]
+    zip_q = assistant._template_answer(doc, "Were zip files involved?")
+    assert zip_q["fields_used"] == ["R", "S1"]
+    late_q = assistant._template_answer(doc, "What about the logon time?")
+    assert "B1" in late_q["fields_used"] and "S1" not in late_q["fields_used"]
+
+
+def test_offline_answer_merges_duplicates_and_ignores_generic_words():
+    """Regression for what the dashboard showed: the zip fact appeared twice and 'files' pulled in an unrelated item."""
+    from itd import assistant
+    doc = {"risk_score": 100.0,
+           "top_shap": [{"text": "Handled 24 archive (.zip) files (usual 0.0).", "shap": 3.7, "strength": "strong"},
+                        {"text": "Activity rate was 15.7 events per hour.", "shap": 3.6, "strength": "strong"}],
+           "baseline_deviations": [{"text": "Logged on at 21.7h (usual 9.3h).", "z": 10.0},
+                                   {"text": "Touched 27 files (usual 4.6).", "z": 10.0},
+                                   {"text": "Handled 24 archive (.zip) files (usual 0.0).", "z": 10.0}]}
+    r = assistant._template_answer(doc, "Were zip files involved?")
+    assert r["answer"].count("archive") == 1 and "Touched" not in r["answer"]
+    assert set(r["fields_used"]) == {"R", "S1", "B3"}                   # both ids cited, one sentence
+    g = assistant._template_answer(doc, "Why was this flagged?")
+    assert g["answer"].count("archive") == 1
+
+
 def test_login_throttle_last(client):
     """Kept last: failed attempts lock this test client's address for the throttle window."""
     codes = [client.post("/api/login", json={"username": "bob", "password": "x"}).status_code for _ in range(7)]

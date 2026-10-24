@@ -48,3 +48,5 @@ export const getSessions = (offset = 0, limit = 50) => request(`/api/sessions?of
 export const getSession = (id) => request(`/api/sessions/${encodeURIComponent(id)}`);
 export const askAssistant = (id, question) =>
   request(`/api/sessions/${encodeURIComponent(id)}/chat`, { method: "POST", body: JSON.stringify({ question }) });
+export const getUser = (id) => request(`/api/users/${encodeURIComponent(id)}`);
+export const getRun = () => request("/api/run/latest");

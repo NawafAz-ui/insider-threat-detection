@@ -13,6 +13,7 @@ from .db import get_db
 
 bearer = HTTPBearer(auto_error=False)
 SESSION_ID = re.compile(r"^S[0-9]{1,12}$")      # strict format: cannot carry a Mongo operator
+USER_ID = re.compile(r"^[A-Za-z0-9_.-]{1,64}$")
 
 
 def hash_password(pw: str) -> str:
@@ -53,6 +54,12 @@ def valid_session_id(session_id: str) -> str:
     if not SESSION_ID.match(session_id):
         raise HTTPException(422, "Invalid session id")
     return session_id
+
+
+def valid_user_id(user_id: str) -> str:
+    if not USER_ID.match(user_id):
+        raise HTTPException(422, "Invalid user id")
+    return user_id
 
 
 def log_access(request: Request, username: str, action: str, **extra):

@@ -33,7 +33,11 @@ show("Flagged sessions, highest risk first (limit 3)", r)
 sid = r.json()["sessions"][0]["session_id"]
 r = c.get(f"/api/sessions/{sid}", headers=h)
 show(f"Session detail for {sid}", r, keep=["session_id", "risk_score", "threshold", "model_scores", "top_shap", "baseline_deviations"])
+uid = r.json()["user"]
+show(f"User history for {uid} (workflow 2)", c.get(f"/api/users/{uid}", headers=h), keep=["user", "summary", "baseline"])
+show("Latest batch run", c.get("/api/run/latest", headers=h), keep=["at", "seconds", "sessions", "flagged", "threshold", "weights"])
 show("Ask the assistant", c.post(f"/api/sessions/{sid}/chat", headers=h, json={"question": "Why was this session flagged?"}), keep=["answer", "fields_used", "mode"])
+show("User id with a bad format (expect 422)", c.get("/api/users/%24ne", headers=h))
 show("Session id with a bad format (expect 422)", c.get("/api/sessions/%7B%22%24ne%22%3A1%7D", headers=h))
 show("Session that does not exist (expect 404)", c.get("/api/sessions/S9999999", headers=h))
 show("Question over 300 characters (expect 422)", c.post(f"/api/sessions/{sid}/chat", headers=h, json={"question": "x" * 301}))

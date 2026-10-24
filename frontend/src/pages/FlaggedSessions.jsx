@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { getSessions } from "../api.js";
+import { getRun, getSessions } from "../api.js";
 import { fmtDate, riskClass, riskLabel } from "../format.js";
-import { toSession } from "../router.js";
+import { toSession, toUser } from "../router.js";
 
 const PAGE = 50;
 
@@ -10,6 +10,7 @@ export default function FlaggedSessions() {
   const [meta, setMeta] = useState({ total: 0, threshold: 0, scored: 0, high: 0 });
   const [error, setError] = useState("");
   const [more, setMore] = useState(false);
+  const [run, setRun] = useState(null);
 
   async function load(offset) {
     try {
@@ -18,7 +19,7 @@ export default function FlaggedSessions() {
       setRows((prev) => (offset === 0 ? r.sessions : [...prev, ...r.sessions]));
     } catch (e) { setError(e.message); }
   }
-  useEffect(() => { load(0); }, []);
+  useEffect(() => { load(0); getRun().then(setRun).catch(() => setRun(null)); }, []);
 
   if (error) return <div><p className="error" role="alert">{error}</p><button className="btn" style={{ marginTop: 12 }} onClick={() => { setError(""); load(0); }}>Try again</button></div>;
   if (!rows) return <p className="muted">Loading flagged sessions…</p>;
@@ -36,6 +37,14 @@ export default function FlaggedSessions() {
         {stat("Flag threshold", meta.threshold, "out of 100, set on validation data")}
         {stat("Review first", meta.high.toLocaleString(), "scored 80 or higher")}
       </div>
+      {run?.metrics?.test?.risk_engine && (
+        <p className="muted small" style={{ marginBottom: 16 }}>
+          Last batch run: {new Date(run.at).toLocaleString()} ({run.seconds} s). Test results of the risk engine on sample data:
+          precision {run.metrics.test.risk_engine.precision.toFixed(2)}, recall {run.metrics.test.risk_engine.recall.toFixed(2)},
+          F1 {run.metrics.test.risk_engine.f1.toFixed(2)}, PR-AUC {(run.metrics.test.risk_engine.pr_auc ?? 0).toFixed(2)}.
+          Sample data is easier than real logs, so these are not research findings.
+        </p>
+      )}
       <div className="card tablecard">
         <table>
           <thead><tr><th>Level</th><th>Risk score</th><th>User</th><th>Session start</th><th>Duration</th><th></th></tr></thead>
@@ -44,7 +53,7 @@ export default function FlaggedSessions() {
               <tr key={r.session_id} tabIndex={0} onClick={() => toSession(r.session_id)} onKeyDown={(e) => e.key === "Enter" && toSession(r.session_id)}>
                 <td><span className={`pill ${riskClass(r.risk_score)}`}>{riskLabel(r.risk_score)}</span></td>
                 <td><span className="n">{r.risk_score.toFixed(0)}</span><span className="meter"><i className={riskClass(r.risk_score)} style={{ width: `${r.risk_score}%` }} /></span></td>
-                <td className="n">{r.user}</td>
+                <td className="n"><button className="link" onClick={(e) => { e.stopPropagation(); toUser(r.user); }}>{r.user}</button></td>
                 <td>{fmtDate(r.start)}</td>
                 <td>{Math.round((new Date(r.end) - new Date(r.start)) / 60000)} min</td>
                 <td className="muted">›</td>

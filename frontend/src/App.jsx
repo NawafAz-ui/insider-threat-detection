@@ -4,6 +4,7 @@ import { toList, useRoute } from "./router.js";
 import Login from "./pages/Login.jsx";
 import FlaggedSessions from "./pages/FlaggedSessions.jsx";
 import SessionDetail from "./pages/SessionDetail.jsx";
+import UserPage from "./pages/UserPage.jsx";
 import Logo from "./Logo.jsx";
 
 export default function App() {
@@ -26,7 +27,9 @@ export default function App() {
           <button className="link" onClick={() => { logout(); setNotice(""); setAuthed(false); toList(); }}>Sign out</button></span>
       </header>
       <main className="wrap">
-        {route.name === "session" ? <SessionDetail key={route.id} id={route.id} /> : <FlaggedSessions />}
+        {route.name === "session" ? <SessionDetail key={route.id} id={route.id} />
+          : route.name === "user" ? <UserPage key={route.id} id={route.id} />
+          : <FlaggedSessions />}
       </main>
     </>
   );

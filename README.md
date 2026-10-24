@@ -36,7 +36,7 @@ python scripts\check_setup.py                 # every line should say OK
 python scripts\generate_synthetic_cert.py data\cert_synthetic
 python -m itd.engine --data data\cert_synthetic --retrain       # prints precision / recall / F1 / PR-AUC
 python -m scripts.create_analyst alice "ChooseAStrongOne1!" analyst
-$env:JWT_SECRET = "a-long-random-string"
+$env:JWT_SECRET = python -c "import secrets; print(secrets.token_hex(32))"   # random 64-character secret
 python -m itd.serve                                              # http://127.0.0.1:8000 (API docs at /docs)
 
 # second terminal
@@ -69,7 +69,7 @@ Interactive docs: http://127.0.0.1:8000/docs
 ## Test
 ```powershell
 cd backend
-pytest -q                                                        # 15 tests, uses an in-memory database
+pytest -q                                                        # 20 tests, uses an in-memory database
 ```
 
 ## Using real data

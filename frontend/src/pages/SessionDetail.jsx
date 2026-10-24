@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { askAssistant, getSession } from "../api.js";
 import { fmtDate, riskClass, riskLabel, fmtStd } from "../format.js";
-import { toList } from "../router.js";
+import { toList, toUser } from "../router.js";
 
 const MODEL_NAMES = { lr: "logistic", xgb: "xgboost", iforest: "isolation forest" };
 const C = 2 * Math.PI * 54;
@@ -22,11 +22,11 @@ export default function SessionDetail({ id }) {
 
   return (
     <section>
-      <p className="crumbs"><button className="link" onClick={toList}>Flagged sessions</button> / {d.user}</p>
-      <h1 style={{ marginTop: 6 }}>{d.user} <span className="muted" style={{ fontWeight: 400, fontSize: "1.1rem" }}>{fmtDate(d.start)} to {fmtDate(d.end)} · {mins} min</span></h1>
+      <p className="crumbs"><button className="link" onClick={toList}>Flagged sessions</button> / <button className="link" onClick={() => toUser(d.user)}>{d.user}</button></p>
+      <h1 style={{ marginTop: 6 }}><button className="link bigname" onClick={() => toUser(d.user)}>{d.user}</button> <span className="muted" style={{ fontWeight: 400, fontSize: "1.1rem" }}>{fmtDate(d.start)} to {fmtDate(d.end)} · {mins} min</span></h1>
       <div className="detail">
         <div>
-          <p className="notice">A flag is not proof of wrongdoing. Review the evidence before taking any action.</p>
+          <p className="notice">A flag is not proof of wrongdoing. Review the evidence before taking any action. <button className="link" onClick={() => toUser(d.user)}>See this user's history</button></p>
           <div className="card scorecard">
             <svg width="130" height="130" viewBox="0 0 130 130" role="img" aria-label={`Risk score ${d.risk_score} out of 100`}>
               <circle cx="65" cy="65" r="54" fill="none" stroke="#e4e9ee" strokeWidth="12" />

@@ -7,6 +7,7 @@ d.createRole({
   privileges: [
     { resource: { db: dbName, collection: "results" }, actions: ["find"] },
     { resource: { db: dbName, collection: "runs" }, actions: ["find"] },
+    { resource: { db: dbName, collection: "user_baselines" }, actions: ["find"] },
     { resource: { db: dbName, collection: "analyst_accounts" }, actions: ["find"] },
     { resource: { db: dbName, collection: "access_log" }, actions: ["find", "insert"] },   // the API's only write
   ],

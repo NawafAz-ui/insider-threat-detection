@@ -17,6 +17,13 @@ BASE_METRICS = [
     "logon_hour", "duration_min", "n_device_connect", "n_distinct_urls", "n_file_events",
     "n_file_zip", "n_email_sent", "n_email_external", "email_size_kb", "n_http_leak",
 ]
+BASE_LABELS = {
+    "logon_hour": "Usual logon hour", "duration_min": "Usual session length (minutes)",
+    "n_device_connect": "Removable devices per session", "n_distinct_urls": "Web pages per session",
+    "n_file_events": "Files touched per session", "n_file_zip": "Archive files per session",
+    "n_email_sent": "Emails sent per session", "n_email_external": "Emails outside the company per session",
+    "email_size_kb": "Email size per session (KB)", "n_http_leak": "File-sharing or leak site visits per session",
+}
 DEV_FEATURES = [f"dev_{m}" for m in BASE_METRICS]
 FEATURES = SESSION_FEATURES + DEV_FEATURES + ["hours_since_prev_session"]
 assert len(SESSION_FEATURES) == 28 and len(DEV_FEATURES) == 10 and len(FEATURES) == 39

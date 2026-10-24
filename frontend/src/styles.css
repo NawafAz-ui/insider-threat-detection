@@ -71,3 +71,7 @@ tbody tr { cursor: pointer; } tbody tr:hover, tbody tr:focus-visible { backgroun
 .field-error { color: var(--hi); font-size: .85rem; min-height: 1.2rem; margin-top: 4px; }
 .info { background: #e8f1f8; border: 1px solid #b9d3e6; border-radius: 8px; padding: 8px 12px; margin-top: 12px; font-size: .9rem; }
 input[aria-invalid="true"] { border-color: var(--hi); }
+table.plain { width: 100%; border-collapse: collapse; } table.plain th { padding: 8px 6px; } table.plain td { padding: 8px 6px; font-size: .9rem; }
+table.plain tr.click { cursor: pointer; } table.plain tr.click:hover, table.plain tr.click:focus-visible { background: #f5f8fa; }
+.link.bigname { font: inherit; font-weight: 700; color: var(--ink); text-decoration-color: var(--teal); }
+td .link { font: inherit; color: var(--ink); }

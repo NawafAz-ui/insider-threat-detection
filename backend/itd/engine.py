@@ -121,6 +121,7 @@ def run(data_dir, retrain=False, report_dir="reports", pseudonymize=None):
                          "label": int(row["label"]), "split": splits[i]})
         db.results.insert_many(docs)
     db.results.create_index([("flagged", 1), ("risk_score", -1)])
+    db.results.create_index([("user", 1), ("start", 1)])          # user history page
     t = step("risk_and_shap", t)
     db.user_baselines.delete_many({})
     items = [{"_id": u, **v} for u, v in final.items()]
@@ -129,11 +130,12 @@ def run(data_dir, retrain=False, report_dir="reports", pseudonymize=None):
     step("save_baselines", t)
 
     info = {"seconds": round(time.time() - t0, 1), "step_seconds": T, "sessions": len(feats), "flagged": int(flagged),
-            "threshold": thr, "weights": risk_cfg["weights"], "at": time.time()}
+            "threshold": thr, "weights": risk_cfg["weights"], "at": time.time(),
+            "metrics": {"test": metrics.get("test"), "sizes": metrics.get("sizes"), "validation_f1": risk_cfg.get("val_f1")}}
     db.runs.insert_one(dict(info))
     os.makedirs(report_dir, exist_ok=True)
     with open(os.path.join(report_dir, "metrics.json"), "w") as f:
-        json.dump({"run": {k: v for k, v in info.items() if k != "at"}, **metrics}, f, indent=2, default=str)
+        json.dump({"run": {k: v for k, v in info.items() if k not in ("at", "metrics")}, **metrics}, f, indent=2, default=str)
     print_summary(info, risk_cfg, metrics)
     return info
 

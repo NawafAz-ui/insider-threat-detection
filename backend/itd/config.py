@@ -7,7 +7,7 @@ MONGO_URI_ENGINE = os.getenv("MONGO_URI_ENGINE", MONGO_URI)
 MONGO_URI_API = os.getenv("MONGO_URI_API", MONGO_URI)
 DB_NAME = os.getenv("DB_NAME", "insider_threat")
 
-JWT_SECRET = os.getenv("JWT_SECRET", "change-me-in-production")
+JWT_SECRET = os.getenv("JWT_SECRET", "dev-only-secret-change-me-before-real-use-0123456789")   # set a random 32+ byte value in real use
 JWT_MINUTES = int(os.getenv("JWT_MINUTES", "30"))
 REQUIRE_HTTPS = os.getenv("REQUIRE_HTTPS", "0") == "1"      # reject plain-HTTP requests
 LOGIN_MAX_FAILURES = int(os.getenv("LOGIN_MAX_FAILURES", "5"))
