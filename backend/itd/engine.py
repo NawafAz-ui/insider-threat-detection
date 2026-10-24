@@ -7,6 +7,7 @@ import json
 import os
 import time
 import numpy as np
+from bson import ObjectId
 from . import config
 from .baselines import add_deviations
 from .db import get_db, get_fs
@@ -52,6 +53,7 @@ def load_models():
 
 def run(data_dir, retrain=False, report_dir="reports", pseudonymize=None):
     T = {}
+    run_id = ObjectId()                                             # links every result to this batch run
     t0 = time.time()
     db = get_db()
 
@@ -113,7 +115,7 @@ def run(data_dir, retrain=False, report_dir="reports", pseudonymize=None):
             i = a + k
             fl = bool(risk[i] >= thr)
             flagged += fl
-            docs.append({"_id": ids[i], "session_id": ids[i], "user": row["user"], "pc": row["pc"],
+            docs.append({"_id": ids[i], "session_id": ids[i], "run_id": run_id, "user": row["user"], "pc": row["pc"],
                          "start": row["start"].to_pydatetime(), "end": row["end"].to_pydatetime(),
                          "risk_score": round(float(risk[i]), 1), "flagged": fl,
                          "model_scores": {m: round(float(v[i]), 4) for m, v in scores.items()},
@@ -132,7 +134,7 @@ def run(data_dir, retrain=False, report_dir="reports", pseudonymize=None):
     info = {"seconds": round(time.time() - t0, 1), "step_seconds": T, "sessions": len(feats), "flagged": int(flagged),
             "threshold": thr, "weights": risk_cfg["weights"], "at": time.time(),
             "metrics": {"test": metrics.get("test"), "sizes": metrics.get("sizes"), "validation_f1": risk_cfg.get("val_f1")}}
-    db.runs.insert_one(dict(info))
+    db.runs.insert_one({"_id": run_id, **info})
     os.makedirs(report_dir, exist_ok=True)
     with open(os.path.join(report_dir, "metrics.json"), "w") as f:
         json.dump({"run": {k: v for k, v in info.items() if k not in ("at", "metrics")}, **metrics}, f, indent=2, default=str)

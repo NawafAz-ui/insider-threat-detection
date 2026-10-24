@@ -247,6 +247,60 @@ def test_offline_answer_merges_duplicates_and_ignores_generic_words():
     assert g["answer"].count("archive") == 1
 
 
+def test_stored_documents_follow_the_schema(client):
+    """Every document the engine, the API and the scripts wrote must pass the database rules."""
+    from itd import schema
+    from itd.db import get_db
+    for name, (n, bad) in schema.check(get_db()).items():
+        assert not bad, f"{name}: {bad[:3]}"
+    assert schema.check(get_db())["results"][0] > 0
+
+
+def test_results_are_linked_to_their_run(client):
+    from itd.db import get_db
+    db = get_db()
+    run = db.runs.find_one(sort=[("at", -1)])
+    assert db.results.count_documents({"run_id": run["_id"]}) == db.results.count_documents({})
+
+
+def test_schema_rejects_bad_documents():
+    from datetime import datetime
+    from itd import schema
+    S = schema.SCHEMAS
+    good = {"_id": "alice", "password_hash": "$2b$12$" + "a" * 53, "role": "analyst"}
+    assert schema.validate(S["analyst_accounts"], good) == []
+    assert schema.validate(S["analyst_accounts"], {**good, "role": "superuser"})
+    assert schema.validate(S["analyst_accounts"], {**good, "password_hash": "plain-text"})
+    assert schema.validate(S["analyst_accounts"], {"_id": "x", "role": "analyst"})                      # missing hash
+    assert schema.validate(S["access_log"], {"at": 1.0, "user": "u", "action": "deleted_everything"})
+    assert schema.validate(S["access_log"], {"at": 1.0, "user": "u", "action": "assistant_question", "question": "x" * 301})
+    assert schema.validate(S["access_log"], {"at": 1.0, "user": "u", "action": "login_ok", "ip": None}) == []
+    assert schema.validate(S["runs"], {"_id": 1})                                                      # wrong type and missing fields
+
+
+def test_real_mongo_enforces_the_schema():
+    """Needs a real server: set ITD_TEST_MONGO=mongodb://127.0.0.1:27017 (skipped otherwise)."""
+    import pytest
+    uri = os.environ.get("ITD_TEST_MONGO")
+    if not uri:
+        pytest.skip("ITD_TEST_MONGO not set")
+    from pymongo import MongoClient
+    from pymongo.errors import WriteError
+    from itd import schema
+    client = MongoClient(uri, serverSelectionTimeoutMS=3000)
+    client.drop_database("itd_schema_test")
+    db = client["itd_schema_test"]
+    schema.apply(db)
+    assert all(schema.server_status(db).values())
+    good = {"_id": "alice", "password_hash": "$2b$12$" + "a" * 53, "role": "analyst"}
+    db.analyst_accounts.insert_one(dict(good))
+    with pytest.raises(WriteError):
+        db.analyst_accounts.insert_one({**good, "_id": "bob", "role": "superuser"})
+    with pytest.raises(WriteError):
+        db.analyst_accounts.update_one({"_id": "alice"}, {"$set": {"role": "root"}})
+    client.drop_database("itd_schema_test")
+
+
 def test_login_throttle_last(client):
     """Kept last: failed attempts lock this test client's address for the throttle window."""
     codes = [client.post("/api/login", json={"username": "bob", "password": "x"}).status_code for _ in range(7)]

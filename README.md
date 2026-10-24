@@ -16,7 +16,7 @@ Database  MongoDB (PyMongo/GridFS) docker-compose.yml
 | `backend/scripts/` | sample-data generator, account creation, setup check, TLS certificate, backup, answer-file builder |
 | `backend/tests/` | automated tests (no MongoDB needed) |
 | `frontend/` | the three screens: Login, Flagged Sessions, Session Detail |
-| `docs/` | CSV layout, API reference (`API.md`), database (`DATABASE.md`), security notes |
+| `docs/` | CSV layout, API reference (`API.md`), database schema (`DATABASE.md`), security notes |
 
 ## Set up (Windows PowerShell; on macOS/Linux use `source .venv/bin/activate`)
 Run each line separately from the project root.
@@ -52,6 +52,14 @@ cd backend; python scripts\check_connection.py --user alice --password "ChooseAS
 ```
 See `docs/DEMO.md` for the demo checklist.
 
+## Database rules and demo
+```powershell
+cd backend
+python -m itd.schema apply                     # once, as administrator: validation rules and indexes
+python -m itd.schema check                     # every stored document against the rules
+python scripts\demo_schema.py                  # valid documents accepted, invalid ones rejected
+```
+
 ## Demo the database
 ```powershell
 cd backend
@@ -69,7 +77,7 @@ Interactive docs: http://127.0.0.1:8000/docs
 ## Test
 ```powershell
 cd backend
-pytest -q                                                        # 20 tests, uses an in-memory database
+pytest -q                                                        # 23 tests with an in-memory database; set ITD_TEST_MONGO=mongodb://localhost:27017 to add the real-server test
 ```
 
 ## Using real data
