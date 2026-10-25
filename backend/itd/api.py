@@ -3,8 +3,10 @@ Run: python -m itd.serve"""
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from pymongo.errors import ConnectionFailure
 from pydantic import BaseModel, ConfigDict, Field
 
+import logging
 import math
 from datetime import datetime, timezone
 
@@ -29,6 +31,33 @@ async def security_headers(request: Request, call_next):
     resp.headers["X-Content-Type-Options"] = "nosniff"
     resp.headers["Cache-Control"] = "no-store"
     return resp
+
+
+log = logging.getLogger("itd.api")
+
+
+@app.exception_handler(ConnectionFailure)
+async def database_down(request: Request, exc: ConnectionFailure):
+    """MongoDB is stopped or unreachable: say so plainly instead of a raw error."""
+    log.error("database not reachable on %s: %s", request.url.path, type(exc).__name__)
+    return JSONResponse({"detail": "The database is not reachable. Start MongoDB and try again."}, status_code=503)
+
+
+@app.exception_handler(Exception)
+async def unexpected_error(request: Request, exc: Exception):
+    """Anything else: log the details on the server, show the user a short message with no internals."""
+    log.exception("unexpected error on %s", request.url.path)
+    return JSONResponse({"detail": "The server had a problem. It has been logged."}, status_code=500)
+
+
+@app.get("/api/health")
+def health():
+    """No login needed: is the API up, and can it reach the database?"""
+    try:
+        get_db("api").command("ping")
+        return {"status": "ok", "database": "up"}
+    except Exception:
+        return JSONResponse({"status": "degraded", "database": "down"}, status_code=503)
 
 
 class LoginIn(BaseModel):          # strict types: a dict like {"$ne": ""} is rejected

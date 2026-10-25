@@ -1,6 +1,6 @@
 """Check that database, API and dashboard are connected end to end.
    python scripts/check_connection.py --user alice --password "ChooseAStrongOne1!"
-   [--api http://127.0.0.1:8000] [--web http://127.0.0.1:5173]"""
+   [--api http://127.0.0.1:8000] [--web http://localhost:5173]"""
 import os
 import sys
 
@@ -10,7 +10,7 @@ import httpx
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--api", default="http://127.0.0.1:8000")
-ap.add_argument("--web", default="http://127.0.0.1:5173")
+ap.add_argument("--web", default="http://localhost:5173")
 ap.add_argument("--user", default="alice")
 ap.add_argument("--password", required=True)
 a = ap.parse_args()
@@ -42,6 +42,8 @@ token = None
 try:
     r = httpx.get(a.api + "/openapi.json", timeout=5)
     line("API reachable", r.status_code == 200, "start it: python -m itd.serve")
+    h = httpx.get(a.api + "/api/health", timeout=5)
+    line("API health (API -> database)", h.status_code == 200, "the API is up but cannot reach MongoDB: docker compose up -d")
     r = httpx.post(a.api + "/api/login", json={"username": a.user, "password": a.password}, timeout=10)
     line("API login (API -> database)", r.status_code == 200, f"HTTP {r.status_code}: check the username/password and that the database is running")
     token = r.json().get("token") if r.status_code == 200 else None

@@ -9,7 +9,7 @@
 | Access logging | logins (ok and failed), sessions viewed, assistant questions | `itd/security.py` |
 | Login throttling | 5 failed logins in 15 minutes pauses sign-in | `itd/security.py` |
 | Model integrity | SHA-256 saved with each model and checked before use | `itd/engine.py` |
-| Write separation | separate engine and API database accounts: `docker-compose.secure.yml` (not yet tested against a live server) | `mongo-init/init-users.js` |
+| Write separation | separate engine and API database accounts (`docker-compose.secure.yml`). Tested on a real MongoDB with the same roles: the API account is denied writes to results, accounts and models, and may only add access-log entries. The Docker start-up script itself has not been run | `mongo-init/init-users.js` |
 | Backups | `python scripts/backup_db.py` (schedule with Task Scheduler or cron) | `scripts/backup_db.py` |
 | Pseudonymized users | `--pseudonymize` and `PSEUDONYM_KEY` | `itd/ingest.py` |
 

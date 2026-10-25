@@ -16,6 +16,7 @@ function messageFor(status, body, isLogin) {
   if (status === 404) return "That item was not found.";
   if (status === 422) return typeof body?.detail === "string" ? body.detail : "Some of the input was not valid. Check it and try again.";
   if (status === 426) return "This server only accepts HTTPS connections.";
+  if (status === 503) return "The database is not reachable. Start MongoDB and try again.";
   if (status === 429) return "Too many failed sign-in attempts. Wait 15 minutes and try again.";
   if (status >= 500) return "The server had a problem. Try again. If it continues, check that the API and database are running.";
   return "Something went wrong. Try again.";

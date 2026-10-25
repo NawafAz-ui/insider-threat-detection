@@ -301,6 +301,53 @@ def test_real_mongo_enforces_the_schema():
     client.drop_database("itd_schema_test")
 
 
+def test_health_endpoint(client):
+    r = client.get("/api/health")
+    assert r.status_code == 200 and r.json() == {"status": "ok", "database": "up"}
+
+
+def test_database_down_gives_a_clear_503(client, monkeypatch):
+    from pymongo.errors import ServerSelectionTimeoutError
+    h = _auth(client)                                                # log in while the database still works
+
+    def down(*a, **k):
+        raise ServerSelectionTimeoutError("localhost:27017: connection refused")
+    monkeypatch.setattr("itd.api.get_db", down)
+    monkeypatch.setattr("itd.security.get_db", down)
+    r = client.get("/api/sessions", headers=h)
+    assert r.status_code == 503 and "database is not reachable" in r.json()["detail"]
+    assert "27017" not in r.text                                     # no internal details
+    assert client.get("/api/health").status_code == 503
+
+
+def test_unexpected_error_hides_internal_details(client, monkeypatch):
+    from fastapi.testclient import TestClient
+    from itd.api import app
+    h = _auth(client)
+
+    def boom(*a, **k):
+        raise RuntimeError("secret internal detail")
+    monkeypatch.setattr("itd.api.get_db", boom)
+    quiet = TestClient(app, raise_server_exceptions=False)
+    r = quiet.get("/api/sessions", headers=h)
+    assert r.status_code == 500 and "secret internal detail" not in r.text and "Traceback" not in r.text
+
+
+def test_both_workflows_end_to_end(client):
+    """Workflow 1: review a flagged session. Workflow 2: from that session, investigate the user."""
+    h = _auth(client)
+    top = client.get("/api/sessions?limit=1", headers=h).json()["sessions"][0]                # list
+    detail = client.get(f"/api/sessions/{top['session_id']}", headers=h).json()                # detail
+    assert detail["user"] == top["user"] and detail["top_shap"]
+    answer = client.post(f"/api/sessions/{top['session_id']}/chat", headers=h, json={"question": "Why was this flagged?"}).json()
+    assert set(answer["fields_used"]) <= set(detail["evidence"])                              # assistant names real evidence
+    history = client.get(f"/api/users/{detail['user']}", headers=h).json()                     # workflow 2
+    assert top["session_id"] in [x["session_id"] for x in history["sessions"]]                # same session is in the history
+    assert history["threshold"] == detail["threshold"]
+    run = client.get("/api/run/latest", headers=h).json()
+    assert run["threshold"] == detail["threshold"]                                             # one threshold everywhere
+
+
 def test_login_throttle_last(client):
     """Kept last: failed attempts lock this test client's address for the throttle window."""
     codes = [client.post("/api/login", json={"username": "bob", "password": "x"}).status_code for _ in range(7)]

@@ -5,6 +5,7 @@ Every endpoint except login needs the header `Authorization: Bearer <token>`.
 
 | Method and path | What it does | Success | Errors |
 |---|---|---|---|
+| `GET /api/health` | no login: is the API up and can it reach the database | 200 `{status, database}` | 503 database not reachable |
 | `POST /api/login` | checks the password, returns a token that expires in 30 minutes | 200 `{token, username, expires_minutes}` | 401 wrong login, 422 invalid input, 429 too many failures |
 | `GET /api/sessions?limit=50&offset=0` | flagged sessions, highest risk first | 200 `{threshold, total, scored, high, sessions[]}` | 401 no/expired token, 403 role not allowed |
 | `GET /api/sessions/{session_id}` | score, model scores, top 3 SHAP behaviors, top 3 baseline differences, evidence ids | 200 | 401, 403, 404 not found, 422 bad id format |
