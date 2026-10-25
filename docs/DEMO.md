@@ -1,46 +1,50 @@
-# Day 7: first end-to-end workflow demonstration
+# Day 7: demonstration of two connected user workflows (about 6 minutes)
 
-Workflow shown: **logs in -> sessions -> features -> risk score -> explanation -> database -> API -> dashboard -> analyst question.**
+The two workflows are connected: workflow 2 starts from the session opened in workflow 1.
 
-## A. Clean start (2 minutes)
-1. Docker Desktop is running.
-2. From the project root: `.\start_all.ps1` (or start the API and dashboard by hand as in the README).
-3. In `backend` with the virtual environment active:
-   ```powershell
-   python scripts\check_connection.py --user alice --password "<password>"
-   ```
-   Every line should say OK and the last line "Everything is connected."  **Screenshot 1.**
+## Before you start
+1. Docker Desktop is running and MongoDB is up (`docker ps` shows `itd-mongo-1`).
+2. API running (`python -m itd.serve` in `backend`) and dashboard running (`npm run dev` in `frontend`).
+3. `python scripts\check_connection.py --user alice --password "<password>"` shows every line OK. **Screenshot 1.**
 
-## B. Run the pipeline live (1 minute, optional but impressive)
-```powershell
-python scripts\generate_synthetic_cert.py data\cert_synthetic
-python -m itd.engine --data data\cert_synthetic --retrain
-```
-The engine prints the five steps, the run time, the model weights, the threshold and a precision / recall / F1 / PR-AUC table.  **Screenshot 2.**
-Refresh the dashboard afterwards: the list now shows the new run.
-
-## C. Dashboard walkthrough (3 minutes)
-| Step | Do | Say | Screenshot |
+## Workflow 1: review a flagged session
+| Step | Do | Expect | Screenshot |
 |---|---|---|---|
-| 1 | Open `http://localhost:5173`, enter a wrong password | Errors are shown, and 5 failures pause sign-in | 3 (login with error) |
-| 2 | Sign in as `alice` | Token-based login, expires in 30 minutes | |
-| 3 | Look at the flagged list | Highest risk first; levels never shown as "safe"; summary cards show flagged / scored / threshold | 4 (list with cards) |
-| 4 | Click the top (High) session | Score ring, S1 to S3 drivers, B1 to B3 baseline differences, "a flag is not proof" notice | 5 (detail, High) |
-| 5 | Ask the assistant "Why was this flagged?" | It only sees the stored evidence; answer names the tags it used | 6 (chat with tags) |
-| 6 | Go back, open the lowest (Borderline) session | Weaker evidence, drivers marked minor | 7 (detail, Borderline) |
+| 1 | Open the dashboard, click Sign in with empty fields | red messages under both fields | 2 |
+| 2 | Sign in as `alice` | the flagged list: cards (Flagged, Flag threshold, Review first), the "Last batch run" line, sessions highest risk first | 3 |
+| 3 | Open the top session | score ring, "What drove the score" (S1 to S3), "Different from this user's normal" (B1 to B3), the notice that a flag is not proof | 4 |
+| 4 | Ask the assistant "Why was this flagged?" | a short answer ending with evidence tags | 5 |
+| 5 | Ask "Were zip files involved?" | only the zip evidence, tags R, S1, B3 | |
 
-## D. Show the other tiers (2 minutes)
-- API: `http://127.0.0.1:8000/docs` **Screenshot 8**, or `python scripts\demo_api.py --user alice --password "<password>"` **Screenshot 9**.
-- Database: `python scripts\demo_db.py` (collections, CRUD, access log) **Screenshot 10**.
+## Workflow 2: investigate that user (continues from workflow 1)
+| Step | Do | Expect | Screenshot |
+|---|---|---|---|
+| 6 | Click the user name in the session title | the user page, address ends in `#/user/U....` | 6 |
+| 7 | Look at "Risk over time" | grey dots for ordinary sessions, large coloured dots for flagged ones, the dashed threshold line | 7 |
+| 8 | Look at "What is normal for this user" and "Flagged sessions of this user" | the 10 normal-behavior values and the flagged sessions with their levels | 8 |
+| 9 | Click a coloured dot or a flagged row | that session opens; browser Back returns to the user page | |
 
-## E. Expected results
-- Wrong password -> error; right password -> list. 
-- The list is sorted by risk, and its first row is the highest score.
-- Session detail shows a score, up to 3 S items and up to 3 B items.
-- The chat answer lists evidence tags (R, S1 to S3, B1 to B3).
-- The access log contains your login, the sessions you opened and your question.
-- Exact counts and scores differ slightly between runs of the data generator.
+## Error handling (30 seconds)
+| Step | Do | Expect | Screenshot |
+|---|---|---|---|
+| 10 | Run `docker stop itd-mongo-1`, then sign in or click a session | a clear message such as "The database is not reachable. Start MongoDB and try again." with Try again | 9 |
+| 11 | Run `docker start itd-mongo-1`, wait 5 seconds, click Try again | the session loads again | |
 
-## F. If something fails
-`check_connection.py` names the first broken link and the command to fix it.
-The assistant answers from a local template unless `LLM_API_KEY` is set; say so if asked.
+## Behind the screen (1 minute)
+- `python scripts\demo_api.py --user alice --password "<password>"`: every API call with its status code. **Screenshot 10.**
+- `python -m itd.schema check` and `python scripts\demo_schema.py`: the database rules, and bad documents rejected. **Screenshots 11 and 12.**
+- `python -m pytest -q` in `backend`: 27 passed, 1 skipped. **Screenshot 13.**
+
+## Oct 25 submission pack: what each item points to
+| Item | Where it is |
+|---|---|
+| Updated system architecture | `docs/ARCHITECTURE.md` (GitHub draws the diagram), plus the diagram from the chat |
+| Database schema | `docs/DATABASE.md` (fields, relationships, rules, indexes), plus the diagram from the chat |
+| Functional and non-functional requirements | `docs/REQUIREMENTS.md` |
+| GitHub repository with meaningful commits | the repository's commit list: one commit per day of work |
+| Screenshots and demonstration of two workflows | screenshots 1 to 13 above and this script |
+
+## What to say about the limits
+- The data is synthetic sample data in the CERT file layout, so its scores are not research results.
+- The assistant answered offline from the stored evidence; the hosted language-model call has not been tested with a key.
+- The real CERT r4.2 and SPEDIA files have not been run yet.
