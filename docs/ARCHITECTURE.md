@@ -2,22 +2,22 @@
 
 Three tiers, as in the proposal, plus a batch detection engine that fills the database.
 
-```mermaid
-flowchart LR
-    subgraph Data["External data sources"]
-        CERT["CERT r4.2 CSV logs"]
-        SPEDIA["SPEDIA (exploratory)"]
-    end
-    subgraph Batch["Batch: detection engine (Python)"]
-        I["1 Ingest in chunks"] --> S["2 Sessions"] --> F["3 39 features + baselines"] --> M["4 Three models"] --> R["5 Risk score + SHAP"]
-    end
-    subgraph DB["Database tier: MongoDB"]
-        D1[("results")]
-        D2[("user_baselines")]
-        D3[("trained_models + GridFS")]
-        D4[("runs")]
-        D5[("analyst_accounts")]
-        D6[("access_log")]
+    ```mermaid
+    flowchart LR
+        subgraph Data["External data sources"]
+            CERT["CERT r4.2 CSV logs"]
+            SPEDIA["SPEDIA (exploratory)"]
+        end
+        subgraph Batch["Batch: detection engine (Python)"]
+            I["1 Ingest in chunks"] --> S["2 Sessions"] --> F["3 39 features + baselines"] --> M["4 Three models"] --> R["5 Risk score + SHAP"]
+        end
+        subgraph DB["Database tier: MongoDB"]
+            D1[("results")]
+            D2[("user_baselines")]
+            D3[("trained_models + GridFS")]
+            D4[("runs")]
+            D5[("analyst_accounts")]
+            D6[("access_log")]
     end
     subgraph API["Backend tier: FastAPI"]
         SEC["Security controls: HTTPS, token, role, validation, throttling, access log"]

@@ -43,7 +43,7 @@ export default function SessionDetail({ id }) {
           </div>
           <div className="two">
             <div className="card">
-              <h3>What drove the score</h3>
+              <h3>What drove the XGBoost score</h3>
               {d.top_shap.length === 0 ? <p className="muted">No single behavior stands out.</p> : (
                 <ul className="ev">{d.top_shap.map((s, i) => (
                   <li key={s.feature} className={s.strength === "minor" ? "minor" : ""}>

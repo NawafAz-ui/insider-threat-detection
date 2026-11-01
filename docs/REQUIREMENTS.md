@@ -38,7 +38,7 @@ while improving the prototype. Status reflects what has been run and tested, not
 | NFR-9 | The user sees a clear message when the API or database is down (*Week 2*) | Done | `/api/health`, `test_database_down_gives_a_clear_503` |
 | NFR-10 | Privacy: the assistant never receives user or PC names; user ids can be pseudonymized; every flag is labelled as not proof | Done | `test_assistant_gets_no_identifiers`, dashboard notice |
 | NFR-11 | The prototype can be set up and checked on a Windows computer | Done | `scripts/check_setup.py`, `scripts/check_connection.py` |
-| NFR-12 | The system is covered by automated tests | 27 tests with an in-memory database, plus a test that needs a real MongoDB | `backend/tests/` |
+| NFR-12 | The system is covered by automated tests | 32 tests with an in-memory database, plus a test that needs a real MongoDB | `backend/tests/` |
 
 ## Out of scope for this prototype
 Saving analyst decisions in the system (this would let the API write results, which the proposal does not allow),

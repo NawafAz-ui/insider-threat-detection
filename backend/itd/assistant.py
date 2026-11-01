@@ -43,7 +43,8 @@ def _core(text: str) -> str:
 
 def _plain_items(doc: dict) -> dict:
     """id -> (plain-words text, is_minor). No SHAP numbers: for the offline answer."""
-    items = {"R": (f"The session scored {doc['risk_score']:.0f} out of 100, which is above the flag threshold", False)}
+    side = "above" if doc.get("flagged", True) else "below"     # user history also lists sessions under the threshold
+    items = {"R": (f"The session scored {doc['risk_score']:.0f} out of 100, which is {side} the flag threshold", False)}
     for i, s in enumerate(doc.get("top_shap", []), 1):
         items[f"S{i}"] = (s["text"].rstrip("."), s.get("strength") == "minor")
     for i, b in enumerate(doc.get("baseline_deviations", []), 1):

@@ -41,6 +41,16 @@ def test_login_and_auth(client):
     assert tok(client).status_code == 200
 
 
+def test_unknown_role_and_expired_token(client, monkeypatch):
+    from itd import config
+    from itd.security import make_token
+    viewer = {"Authorization": "Bearer " + make_token("alice", "viewer")}
+    assert client.get("/api/sessions", headers=viewer).status_code == 403            # role is neither analyst nor admin
+    monkeypatch.setattr(config, "JWT_MINUTES", -1)                                  # token already expired when issued
+    old = {"Authorization": "Bearer " + make_token("alice", "analyst")}
+    assert client.get("/api/sessions", headers=old).status_code == 401
+
+
 def test_injection_rejected(client):
     r = client.post("/api/login", json={"username": {"$ne": ""}, "password": {"$ne": ""}})
     assert r.status_code == 422
@@ -346,6 +356,51 @@ def test_both_workflows_end_to_end(client):
     assert history["threshold"] == detail["threshold"]
     run = client.get("/api/run/latest", headers=h).json()
     assert run["threshold"] == detail["threshold"]                                             # one threshold everywhere
+
+
+def test_offline_answer_for_session_below_threshold():
+    """User history lists sessions under the threshold too: the answer must not call them flagged."""
+    from itd import assistant
+    doc = {"risk_score": 12.0, "flagged": False, "top_shap": [], "baseline_deviations": []}
+    answer = assistant._template_answer(doc, "Why was this flagged?")["answer"]
+    assert "below the flag threshold" in answer and "above" not in answer
+
+
+def test_risk_engine_weights_and_threshold():
+    import numpy as np
+    from itd.risk import combine, fit_risk_engine
+    y = np.array([0, 0, 0, 0, 1, 1])
+    val = {"lr": np.array([.1, .2, .1, .3, .9, .8]), "xgb": np.array([0, .1, .2, .1, .8, .9]),
+           "iforest": np.array([.5, .4, .6, .5, .5, .6])}
+    cfg = fit_risk_engine(val, y)
+    assert abs(sum(cfg["weights"].values()) - 1) < 1e-9
+    risk = combine(val, cfg["weights"])
+    assert risk.min() >= 0 and risk.max() <= 100
+    assert (risk[y == 1] >= cfg["threshold"]).all() and (risk[y == 0] < cfg["threshold"]).all()
+
+
+def test_aggregator_counts_per_session():
+    import pandas as pd
+    from itd.aggregate import Aggregator
+    agg = Aggregator()
+    agg.add("device", pd.DataFrame({"sid": [0, 0, 1], "activity": ["Connect", "Disconnect", "Connect"]}))
+    agg.add("email", pd.DataFrame({"sid": [0, 0], "to": ["a@dtaa.com", "b@gmail.com"], "size": ["2048", "1024"], "attachments": ["1", "0"]}))
+    agg.add("http", pd.DataFrame({"sid": [0, 0, 1], "url": ["http://monster.com/x", "http://monster.com/x", "http://dropbox.com/y"]}))
+    out = agg.result(2)
+    assert out.loc[0, "n_device_connect"] == 1 and out.loc[1, "n_device_connect"] == 1     # Disconnect is not counted
+    assert out.loc[0, "n_email_sent"] == 2 and out.loc[0, "n_email_external"] == 1 and out.loc[0, "email_size_kb"] == 3
+    assert out.loc[0, "n_http_job"] == 2 and out.loc[0, "n_distinct_urls"] == 1 and out.loc[1, "n_http_leak"] == 1
+
+
+def test_top_shap_is_positive_and_at_most_three():
+    import numpy as np
+    from itd.explain import top_shap
+    from itd.features import FEATURES
+    sv, x = np.zeros(len(FEATURES)), np.ones(len(FEATURES))
+    sv[:5] = [0.5, 0.4, 0.3, 0.2, -1.0]
+    out = top_shap(sv, x, {})
+    assert [o["feature"] for o in out] == FEATURES[:3] and all(o["shap"] > 0 for o in out)
+    assert top_shap(-np.ones(len(FEATURES)), x, {}) == []
 
 
 def test_login_throttle_last(client):

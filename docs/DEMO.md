@@ -12,7 +12,7 @@ The two workflows are connected: workflow 2 starts from the session opened in wo
 |---|---|---|---|
 | 1 | Open the dashboard, click Sign in with empty fields | red messages under both fields | 2 |
 | 2 | Sign in as `alice` | the flagged list: cards (Flagged, Flag threshold, Review first), the "Last batch run" line, sessions highest risk first | 3 |
-| 3 | Open the top session | score ring, "What drove the score" (S1 to S3), "Different from this user's normal" (B1 to B3), the notice that a flag is not proof | 4 |
+| 3 | Open the top session | score ring, "What drove the XGBoost score" (S1 to S3), "Different from this user's normal" (B1 to B3), the notice that a flag is not proof | 4 |
 | 4 | Ask the assistant "Why was this flagged?" | a short answer ending with evidence tags | 5 |
 | 5 | Ask "Were zip files involved?" | only the zip evidence, tags R, S1, B3 | |
 
@@ -33,7 +33,7 @@ The two workflows are connected: workflow 2 starts from the session opened in wo
 ## Behind the screen (1 minute)
 - `python scripts\demo_api.py --user alice --password "<password>"`: every API call with its status code. **Screenshot 10.**
 - `python -m itd.schema check` and `python scripts\demo_schema.py`: the database rules, and bad documents rejected. **Screenshots 11 and 12.**
-- `python -m pytest -q` in `backend`: 27 passed, 1 skipped. **Screenshot 13.**
+- `python -m pytest -q` in `backend`: 32 passed, 1 skipped (screenshot 13 was taken when it was 27). **Screenshot 13.**
 
 ## Oct 25 submission pack: what each item points to
 | Item | Where it is |
