@@ -12,15 +12,15 @@ while improving the prototype. Status reflects what has been run and tested, not
 | FR-3 | build 39 features per session (28 session, 10 deviation, 1 recency) | Must | Done | `itd/features.py`, `test_feature_count` |
 | FR-4 | keep a baseline per user and compare each session with that user's earlier sessions only | Must | Done | `itd/baselines.py`, `test_baseline_uses_only_past_sessions` |
 | FR-5 | score sessions with three models (Logistic Regression, XGBoost, Isolation Forest), trained once, saved, then loaded for scoring | Must | Done | `itd/models.py`, `itd/engine.py` |
-| FR-6 | combine the model scores into a 0 to 100 risk score and flag sessions at or above a threshold chosen on validation data | Must | Done | `itd/risk.py` |
+| FR-6 | calibrate each model's score on validation data, combine the scores into a 0 to 100 risk score and flag sessions at or above a threshold chosen on validation data | Must | Done (sigmoid calibration added in Week 3) | `itd/risk.py`, `test_calibration_keeps_the_order_and_is_fitted_on_validation_scores` |
 | FR-7 | explain each session with the top 3 SHAP behaviors and the top 3 differences from the user's normal, in plain words | Must | Done | `itd/explain.py`, `test_list_sorted_and_detail` |
-| FR-8 | let an analyst ask questions about one session; answers use only the stored evidence, name the evidence used, and cannot change a score | Must | Done offline; hosted language-model call not tested with a real key | `itd/assistant.py`, assistant tests |
+| FR-8 | let an analyst ask questions about one session; answers use only the stored evidence, name the evidence used, and cannot change a score | Must | Done offline; hosted answers are checked statement by statement (mechanical check, tested with fake replies); hosted call not tested with a real key | `itd/assistant.py`, `test_hosted_statements_are_checked_one_by_one` |
 | FR-9 | require analysts to sign in and give them a time-limited token | Must | Done | `itd/security.py`, `test_login_and_auth` |
 | FR-10 | provide a dashboard with login, a flagged-session list (user, date, score) and a session page (score, explanation, chat) | Must | Done | `frontend/src/pages/` |
 | FR-11 | show one user's sessions over time and what is normal for that user (*Week 2*) | Must | Done | `GET /api/users/{id}`, `UserPage.jsx`, `test_user_history_endpoint` |
 | FR-12 | show when the batch engine last ran and its test results (*Week 2*) | Should | Done | `GET /api/run/latest`, `test_latest_run_endpoint` |
 | FR-13 | record every login, session view, user view and assistant question in an access log | Must | Done | `log_access`, `test_chat_names_fields_and_is_logged` |
-| FR-14 | report precision, recall, F1 and PR-AUC on a held-out test set | Must | Done | engine output, `reports/metrics.json` |
+| FR-14 | report precision, recall, F1, PR-AUC (average precision) and Brier score on a held-out test set, with every threshold chosen on validation data | Must | Done | engine output, `reports/metrics.json` |
 | FR-15 | run an exploratory cross-dataset test on SPEDIA using only shared features | Should | Code done, tested on a stand-in file; real SPEDIA columns not yet mapped | `itd/spedia.py`, `itd/cross_eval.py` |
 
 ## Non-functional requirements
@@ -38,7 +38,7 @@ while improving the prototype. Status reflects what has been run and tested, not
 | NFR-9 | The user sees a clear message when the API or database is down (*Week 2*) | Done | `/api/health`, `test_database_down_gives_a_clear_503` |
 | NFR-10 | Privacy: the assistant never receives user or PC names; user ids can be pseudonymized; every flag is labelled as not proof | Done | `test_assistant_gets_no_identifiers`, dashboard notice |
 | NFR-11 | The prototype can be set up and checked on a Windows computer | Done | `scripts/check_setup.py`, `scripts/check_connection.py` |
-| NFR-12 | The system is covered by automated tests | 32 tests with an in-memory database, plus a test that needs a real MongoDB | `backend/tests/` |
+| NFR-12 | The system is covered by automated tests | 42 tests with an in-memory database, plus a test that needs a real MongoDB | `backend/tests/` |
 
 ## Out of scope for this prototype
 Saving analyst decisions in the system (this would let the API write results, which the proposal does not allow),

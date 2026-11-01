@@ -1,9 +1,22 @@
 import { useEffect, useState } from "react";
 import { getRun, getSessions } from "../api.js";
-import { fmtDate, riskClass, riskLabel } from "../format.js";
+import RunPanel from "../components/RunPanel.jsx";
+import { fmtDate, riskClass, riskLabel, toCsv } from "../format.js";
 import { toSession, toUser } from "../router.js";
 
 const PAGE = 50;
+
+// Built in the browser from the rows already on screen, so the API gets no new request and writes nothing.
+function saveCsv(rows) {
+  const note = "A flag is a lead for a human, not proof of wrongdoing";
+  const csv = toCsv(["session_id", "user", "session_start", "session_end", "risk_score", "note"],
+    rows.map((r) => [r.session_id, r.user, r.start, r.end, r.risk_score, note]));
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+  a.download = "flagged-sessions.csv";
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
 
 export default function FlaggedSessions() {
   const [rows, setRows] = useState(null);
@@ -37,14 +50,7 @@ export default function FlaggedSessions() {
         {stat("Flag threshold", meta.threshold, "out of 100, set on validation data")}
         {stat("Review first", meta.high.toLocaleString(), "scored 80 or higher")}
       </div>
-      {run?.metrics?.test?.risk_engine && (
-        <p className="muted small" style={{ marginBottom: 16 }}>
-          Last batch run: {new Date(run.at).toLocaleString()} ({run.seconds} s). Test results of the risk engine on sample data:
-          precision {run.metrics.test.risk_engine.precision.toFixed(2)}, recall {run.metrics.test.risk_engine.recall.toFixed(2)},
-          F1 {run.metrics.test.risk_engine.f1.toFixed(2)}, PR-AUC {(run.metrics.test.risk_engine.pr_auc ?? 0).toFixed(2)}.
-          Sample data is easier than real logs, so these are not research findings.
-        </p>
-      )}
+      <RunPanel run={run} />
       <div className="card tablecard">
         <table>
           <thead><tr><th>Level</th><th>Risk score</th><th>User</th><th>Session start</th><th>Duration</th><th></th></tr></thead>
@@ -64,11 +70,14 @@ export default function FlaggedSessions() {
       </div>
       <div className="foot">
         <span className="muted">Showing {rows.length} of {meta.total}. A flag is not proof of wrongdoing.</span>
-        {rows.length < meta.total && (
-          <button className="btn" disabled={more} onClick={async () => { setMore(true); await load(rows.length); setMore(false); }}>
-            {more ? "Loading…" : "Show more"}
-          </button>
-        )}
+        <span style={{ display: "flex", gap: 12 }}>
+          <button className="btn" onClick={() => saveCsv(rows)}>Download shown sessions (CSV)</button>
+          {rows.length < meta.total && (
+            <button className="btn" disabled={more} onClick={async () => { setMore(true); await load(rows.length); setMore(false); }}>
+              {more ? "Loading…" : "Show more"}
+            </button>
+          )}
+        </span>
       </div>
     </section>
   );

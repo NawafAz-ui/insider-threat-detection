@@ -50,7 +50,7 @@ FEATURE_TEXT = {
     "n_http_job": "Visited job-search sites: {v:.0f}.",
     "hours_since_prev_session": "Working hours since the user's previous session: {v:.1f}.",
     "logoff_missing": "Session had no logoff event.",
-    "n_distinct_pcs_day": "Used {v:.0f} different PCs that day.",
+    "n_distinct_pcs_day": "Used {v:.0f} different PCs that day, up to this session.",
     "events_per_hour": "Activity rate was {v:.1f} events per hour.",
     "n_events_total": "Total of {v:.0f} events in the session.",
     "n_email_attach": "Emails with attachments: {v:.0f}.",
@@ -83,7 +83,10 @@ def session_features(sessions: pd.DataFrame, agg: pd.DataFrame) -> pd.DataFrame:
     s["device_after_hours"] = s["n_device_connect"] * s["is_after_hours"]
     s["n_events_total"] = s[["n_device_connect", "n_file_events", "n_email_sent", "n_http"]].sum(axis=1)
     s["events_per_hour"] = s["n_events_total"] / np.maximum(s["duration_min"] / 60, 0.25)
-    day = s["start"].dt.date
-    s["n_distinct_pcs_day"] = s.groupby([s["user"], day])["pc"].transform("nunique")
-    s["n_sessions_day"] = s.groupby([s["user"], day])["pc"].transform("size")
+    # day context counts only this session and the earlier ones of the same user and day (sessions are in time order)
+    day = pd.Series(s["start"].dt.date, index=s.index)
+    by_day = [s["user"], day]
+    s["n_sessions_day"] = s.groupby(by_day).cumcount() + 1
+    first_use = ~pd.DataFrame({"u": s["user"], "d": day, "pc": s["pc"]}).duplicated()
+    s["n_distinct_pcs_day"] = first_use.groupby(by_day).cumsum()
     return s

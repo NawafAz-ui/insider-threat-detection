@@ -9,7 +9,7 @@ Day 1 (review). Written on 31 October 2026 from the code on branch `main` (commi
 - **Dashboard:** four views (Login, Flagged Sessions, Session Detail with chat, User Page with risk timeline).
 - **Database:** MongoDB with six collections, validation rules, indexes and `run_id` links.
 - **Security:** bcrypt, expiring token, analyst and admin roles, input checks, throttling, access log, model hash check.
-- **Checks:** 27 automated tests passed at the start of Week 3; 32 pass now, plus one that needs a real MongoDB and is skipped by default. The frontend production build passes (40 modules).
+- **Checks:** 27 automated tests passed at the start of Week 3; 42 pass now (after the second update on 1 November), plus one that needs a real MongoDB and is skipped by default (43 pass with a server). The frontend production build passes (41 modules).
 - **Data:** generated CERT-layout data only. Original CERT r4.2 and SPEDIA have not been run.
 
 ## Issues and remaining core modules
@@ -17,11 +17,11 @@ Each row was checked in the code.
 
 | # | Issue | Where | Type | Priority | Suggested day | Status |
 |---|---|---|---|---|---|---|
-| 1 | No score calibration. The proposal promises Platt scaling; the code combines raw scores and only rescales Isolation Forest | `risk.py` | Missing module | High | Day 4 (algorithm and logic) | Open |
-| 2 | Hosted assistant answers are not checked statement by statement; only unknown evidence ids are removed | `assistant.py:111` | Missing module | High | Day 4 | Open |
-| 3 | Thresholds for single models are picked on the test labels, so their test numbers are too optimistic. The combined score is correct (validation only) | `risk.py:38-40`, `engine.py:97-98` | Evaluation | High | Day 4 | Open |
-| 4 | `n_distinct_pcs_day` and `n_sessions_day` use the whole day, so later sessions leak into earlier ones | `features.py:87-88` | Method | Medium | Day 4 | Open |
-| 5 | Re-running the engine without `--retrain` loads saved baselines and replays the same data on top; last-session time is not saved, so recency breaks between runs | `engine.py:72-73`, `baselines.py` | Method | Medium | Day 5 (connect to database) | Open |
+| 1 | No score calibration. The proposal promises Platt scaling; the code combines raw scores and only rescales Isolation Forest | `risk.py` | Missing module | High | Day 4 (algorithm and logic) | Done (1 November): sigmoid per model fitted on validation data |
+| 2 | Hosted assistant answers are not checked statement by statement; only unknown evidence ids are removed | `assistant.py:111` | Missing module | High | Day 4 | Done (1 November): statements must cite existing evidence and use numbers found in it; tested with fake replies |
+| 3 | Thresholds for single models are picked on the test labels, so their test numbers are too optimistic. The combined score is correct (validation only) | `risk.py:38-40`, `engine.py:97-98` | Evaluation | High | Day 4 | Done (1 November): every threshold comes from validation data |
+| 4 | `n_distinct_pcs_day` and `n_sessions_day` use the whole day, so later sessions leak into earlier ones | `features.py:87-88` | Method | Medium | Day 4 | Done (1 November): counts use only the sessions up to the current one |
+| 5 | Re-running the engine without `--retrain` loads saved baselines and replays the same data on top; last-session time is not saved, so recency breaks between runs | `engine.py:72-73`, `baselines.py` | Method | Medium | Day 5 (connect to database) | Done (1 November): last-session time saved; same data again rebuilds the baseline |
 | 6 | Offline answer always says the score is "above the flag threshold", which is wrong for below-threshold sessions reachable from the user page | `assistant.py:46` | Functional error | Medium | Day 7 | Done: answer says "below" when the session is not flagged; test added |
 | 7 | Heading "What drove the score" does not say that SHAP explains the XGBoost model only | `SessionDetail.jsx:46` | Accuracy of wording | Low | Day 7 (one line) | Done: heading now reads "What drove the XGBoost score" |
 | 8 | Not yet run: original CERT r4.2, SPEDIA, secure MongoDB start-up script, HTTPS in a browser, hosted model with a real key | environment | Verification | Medium | After this week | Open |
@@ -52,4 +52,4 @@ Not planned for the prototype: peer-group comparison, real-time scoring, saving 
 | 2 | `docs/USE_CASES.md`: use-case diagram and descriptions | Roles and access matrix; tests for unknown role (403) and expired token (401) |
 | 7 | Review of the methodology against objectives and research gaps (`docs/METHODOLOGY.md`, section 6) | Run all tests and the build; fix issue 6 and 7; add module tests for issue 11 |
 
-Days 3 to 6 are owned by teammates. The issues marked Day 4, Day 5 are suggestions for them and need their agreement.
+Update of 1 November 2026: the group decided to do the whole table. The work for the other rows, the new tests and the numbers are in `docs/ACTION_PLAN_REMAINING_ROWS.md`, `docs/DATAFLOW.md`, `docs/TOOLS_AND_ALGORITHMS.md`, `docs/DATA_RULES.md`, `docs/EVALUATION_CRITERIA.md` and Sections 11, 14, 16, 17, 21 and 22 of the Word file.

@@ -8,8 +8,8 @@ user id) and are checked by the code and by the rules below, not by foreign keys
 | Collection | One document is | Key fields | Written by | Read by |
 |---|---|---|---|---|
 | `results` | one scored session | `_id` = `session_id` (`S0000123`), `run_id`, `user`, `pc`, `start`, `end`, `risk_score` (0-100), `flagged`, `model_scores` (lr, xgb, iforest), `top_shap` (up to 3), `baseline_deviations` (up to 3), `label`, `split` | engine | API |
-| `user_baselines` | one user's normal behavior | `_id` = user, `n` sessions seen, `mean` and `m2` for the 10 baseline metrics (running mean and sum of squares) | engine | engine, API |
-| `trained_models` | the current model set | `_id` = `current`, `files` (3 GridFS ids), `sha256` (integrity), `risk` (weights, threshold), `features` (39 names), `metrics`, `trained_at` | engine | engine |
+| `user_baselines` | one user's normal behavior | `_id` = user, `n` sessions seen, `mean` and `m2` for the 10 baseline metrics (running mean and sum of squares), `last` (start time of the user's last session) | engine | engine, API |
+| `trained_models` | the current model set | `_id` = `current`, `files` (3 GridFS ids), `sha256` (integrity), `risk` (calibrators, weights, threshold, validation thresholds and F1 per model), `features` (39 names), `metrics`, `trained_at` | engine | engine |
 | `runs` | one batch run | `_id` (run id), `at`, `seconds`, `step_seconds`, `sessions`, `flagged`, `threshold`, `weights`, `metrics` | engine | API |
 | `analyst_accounts` | one analyst | `_id` = username, `password_hash` (bcrypt), `role` (`analyst` or `admin`) | `scripts/analysts.py` | API |
 | `access_log` | one audit event | `at`, `user`, `action`, `ip`, plus `session_id`, `viewed_user` or `question` depending on the action | API | API (login throttling) |

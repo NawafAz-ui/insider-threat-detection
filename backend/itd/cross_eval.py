@@ -4,12 +4,11 @@ using only the features that vary in BOTH datasets.
 import argparse
 import json
 import os
-import numpy as np
 from .baselines import add_deviations
 from .features import FEATURES, session_features
 from .ingest import load_dataset
 from .models import score_models, time_split, train_models
-from .risk import combine, evaluate, evaluate_model, fit_risk_engine
+from .risk import calibrate, combine, evaluate, evaluate_model, fit_risk_engine
 
 
 def build(folder):
@@ -29,10 +28,12 @@ def run(train_dir, test_dir, report_dir="reports"):
     cfg = fit_risk_engine(score_models(models, extra, Xa[va]), ya[va])
 
     def evaluate_on(X, y):
-        sc = score_models(models, extra, X)
+        raw = score_models(models, extra, X)
+        sc = calibrate(raw, cfg["calibrators"])             # everything frozen on the training dataset's validation part
         r = combine(sc, cfg["weights"])
         return {"sessions": int(len(y)), "malicious_share": float(y.mean()),
-                "risk_engine": evaluate(y, r, cfg["threshold"]), **{k: evaluate_model(y, v) for k, v in sc.items()}}
+                "risk_engine": evaluate(y, r, cfg["threshold"]),
+                **{k: evaluate_model(y, sc[k], cfg["val_thresholds"][k], raw[k]) for k in sc}}
 
     res = {"note": "EXPLORATORY: trained on the first dataset, tested on the second with shared features only.",
            "shared_features": shared, "dropped_features": dropped,

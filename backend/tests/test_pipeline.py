@@ -158,14 +158,14 @@ def test_https_required_when_enabled(client):
 
 
 def test_llm_answer_is_validated(client, monkeypatch):
-    """A (mocked) LLM reply may only cite evidence ids that exist; bad ids are dropped."""
+    """A (mocked) LLM reply may only cite evidence ids that exist; bad ids are dropped. The reply is a list of statements."""
     from itd import assistant, config
     from itd.db import get_db
     doc = get_db().results.find_one({"flagged": True})
 
     class R:
         def raise_for_status(self): pass
-        def json(self): return {"content": [{"type": "text", "text": '{"answer": "Because of S1.", "fields_used": ["S1", "X9", "R"]}'}]}
+        def json(self): return {"content": [{"type": "text", "text": '{"statements": [{"text": "Because of S1.", "evidence": ["S1", "X9", "R"]}]}'}]}
     monkeypatch.setattr(config, "LLM_API_KEY", "test")
     monkeypatch.setattr(assistant.httpx, "post", lambda *a, **k: R())
     res = assistant.answer(doc, "why?")
@@ -368,13 +368,13 @@ def test_offline_answer_for_session_below_threshold():
 
 def test_risk_engine_weights_and_threshold():
     import numpy as np
-    from itd.risk import combine, fit_risk_engine
+    from itd.risk import calibrate, combine, fit_risk_engine
     y = np.array([0, 0, 0, 0, 1, 1])
     val = {"lr": np.array([.1, .2, .1, .3, .9, .8]), "xgb": np.array([0, .1, .2, .1, .8, .9]),
            "iforest": np.array([.5, .4, .6, .5, .5, .6])}
     cfg = fit_risk_engine(val, y)
     assert abs(sum(cfg["weights"].values()) - 1) < 1e-9
-    risk = combine(val, cfg["weights"])
+    risk = combine(calibrate(val, cfg["calibrators"]), cfg["weights"])
     assert risk.min() >= 0 and risk.max() <= 100
     assert (risk[y == 1] >= cfg["threshold"]).all() and (risk[y == 0] < cfg["threshold"]).all()
 
@@ -401,6 +401,142 @@ def test_top_shap_is_positive_and_at_most_three():
     out = top_shap(sv, x, {})
     assert [o["feature"] for o in out] == FEATURES[:3] and all(o["shap"] > 0 for o in out)
     assert top_shap(-np.ones(len(FEATURES)), x, {}) == []
+
+
+def test_calibration_keeps_the_order_and_is_fitted_on_validation_scores():
+    import numpy as np
+    from itd.risk import calibrate, fit_calibrators
+    y = np.array([0, 0, 0, 0, 0, 0, 1, 1, 1, 1])
+    s = {"m": np.array([.1, .2, .1, .3, .2, .4, .6, .8, .7, .9])}
+    cal = fit_calibrators(s, y)
+    p = calibrate(s, cal)["m"]
+    assert cal["m"]["a"] > 0 and ((p > 0) & (p < 1)).all()
+    assert (np.argsort(p, kind="stable") == np.argsort(s["m"], kind="stable")).all()      # same order, only the scale changes
+    assert p[y == 1].mean() > p[y == 0].mean()
+
+
+def test_evaluate_model_uses_the_given_threshold_not_the_test_labels():
+    import numpy as np
+    from itd.risk import evaluate_model
+    y, s = np.array([0, 0, 1, 1]), np.array([.1, .4, .35, .9])
+    m = evaluate_model(y, s, 0.5)                              # the best threshold on these labels would be 0.35
+    assert m["validation_threshold"] == 0.5 and m["flagged"] == 1 and m["precision"] == 1.0 and m["recall"] == 0.5
+
+
+def test_stored_models_keep_calibrators_and_validation_thresholds(client):
+    from itd.db import get_db
+    doc = get_db().trained_models.find_one({"_id": "current"})
+    assert set(doc["risk"]["calibrators"]) == {"lr", "xgb", "iforest"}
+    for k, m in doc["metrics"]["test"].items():
+        if k == "risk_engine":
+            assert 0 <= m["brier"] <= 1
+            continue
+        assert m["validation_threshold"] == doc["risk"]["val_thresholds"][k] and "best_threshold" not in m
+        assert 0 <= m["brier"] <= 1 and 0 <= m["brier_raw"] <= 1
+
+
+def _same_day_sessions():
+    import pandas as pd
+    from itd.aggregate import Aggregator
+    day = pd.Timestamp("2010-03-02")
+    rows = [("a", "PC1", 8), ("a", "PC2", 10), ("a", "PC1", 13), ("b", "PC9", 9), ("a", "PC1", 24 + 9)]
+    sessions = pd.DataFrame({"session_id": [f"S{i}" for i in range(len(rows))], "sid": range(len(rows)),
+                             "user": [r[0] for r in rows], "pc": [r[1] for r in rows],
+                             "start": [day + pd.Timedelta(hours=r[2]) for r in rows]})
+    sessions["end"] = sessions["start"] + pd.Timedelta(hours=1)
+    return sessions, Aggregator().result(len(rows))
+
+
+def test_day_counts_use_only_the_sessions_up_to_the_current_one():
+    from itd.features import session_features
+    sessions, agg = _same_day_sessions()
+    full = session_features(sessions, agg)
+    assert full["n_sessions_day"].tolist() == [1, 2, 3, 1, 1]            # the next day starts again at 1
+    assert full["n_distinct_pcs_day"].tolist() == [1, 2, 2, 1, 1]
+    part = session_features(sessions.iloc[:3], agg)                      # dropping later sessions changes nothing earlier
+    cols = ["n_sessions_day", "n_distinct_pcs_day"]
+    assert (full[cols].iloc[:3].to_numpy() == part[cols].to_numpy()).all()
+
+
+def _user_frame(start, n, user="u"):
+    import pandas as pd
+    from itd.features import BASE_METRICS
+    f = pd.DataFrame({m: [1.0] * n for m in BASE_METRICS})
+    f["user"], f["start"] = user, pd.date_range(start, periods=n, freq="D")
+    f.index = [f"S{start}{i}" for i in range(n)]
+    return f
+
+
+def test_running_the_same_data_again_does_not_count_it_twice():
+    from itd.baselines import add_deviations
+    f = _user_frame("2010-01-04 09:00", 12)
+    out1, final = add_deviations(f)
+    saved = {u: {"_id": u, **v} for u, v in final.items()}
+    out2, final2 = add_deviations(f, saved)
+    assert final["u"]["n"] == final2["u"]["n"] == 12 and "last" in final["u"]
+    assert out1["hours_since_prev_session"].equals(out2["hours_since_prev_session"])
+    old = {u: {k: v for k, v in d.items() if k != "last"} for u, d in saved.items()}          # saved before the last time was kept
+    assert add_deviations(f, old)[1]["u"]["n"] == 12
+
+
+def test_a_later_batch_continues_the_saved_baseline_and_recency():
+    from itd.baselines import add_deviations
+    _, final = add_deviations(_user_frame("2010-01-04 09:00", 12))
+    saved = {u: {"_id": u, **v} for u, v in final.items()}
+    out, final2 = add_deviations(_user_frame("2010-02-01 09:00", 3), saved)
+    assert final2["u"]["n"] == 15
+    assert out["hours_since_prev_session"].iloc[0] > 24 * 7              # gap counted from the last session of the first batch
+
+
+def _hosted_reply(monkeypatch, text):
+    from itd import assistant, config
+
+    class R:
+        def raise_for_status(self): pass
+        def json(self): return {"content": [{"type": "text", "text": text}]}
+    monkeypatch.setattr(config, "LLM_API_KEY", "test")
+    monkeypatch.setattr(assistant.httpx, "post", lambda *a, **k: R())
+    return assistant
+
+
+_DOC = {"risk_score": 84.3, "flagged": True, "baseline_deviations": [],
+        "top_shap": [{"text": "Connected 5 removable device(s) (usual 0.2).", "shap": 0.62, "feature": "n_device_connect"}]}
+
+
+def test_hosted_statements_are_checked_one_by_one(monkeypatch):
+    import json
+    reply = json.dumps({"statements": [
+        {"text": "The session scored 84 out of 100.", "evidence": ["R"]},                 # rounded number, supported
+        {"text": "It connected 5 removable devices.", "evidence": ["S1"]},                # supported
+        {"text": "It connected 9 removable devices.", "evidence": ["S1"]},                # number not in the evidence
+        {"text": "The user is guilty.", "evidence": []},                                  # no evidence cited
+        {"text": "The score is 84.", "evidence": ["X9"]}]})                               # cites an id that does not exist
+    res = _hosted_reply(monkeypatch, reply).answer(_DOC, "Why was this flagged?")
+    assert res["mode"] == "llm" and res["withheld"] == 3 and res["fields_used"] == ["R", "S1"]
+    assert "84 out of 100" in res["answer"] and "9 removable" not in res["answer"] and "guilty" not in res["answer"]
+
+
+def test_hosted_answer_says_so_when_no_statement_is_supported(monkeypatch):
+    for reply in ('{"statements": []}', '{"statements": [{"text": "Score 99.", "evidence": ["R"]}]}'):
+        res = _hosted_reply(monkeypatch, reply).answer(_DOC, "Is this user a thief?")
+        assert res["answer"].startswith("The stored evidence for this session does not support") and res["fields_used"] == []
+
+
+def test_hosted_reply_in_the_old_format_uses_the_offline_answer(monkeypatch):
+    res = _hosted_reply(monkeypatch, '{"answer": "Because of S1.", "fields_used": ["S1"]}').answer(_DOC, "why?")
+    assert res["mode"] == "template"
+
+
+def test_missing_log_file_and_wrong_date_format_stop_the_run(tmp_path):
+    import pytest
+    from itd.ingest import load_dataset
+    quiet = dict(pseudonymize=False, log=lambda *a, **k: None)
+    with pytest.raises(FileNotFoundError, match="Missing in .*logon.csv"):
+        load_dataset(str(tmp_path), **quiet)
+    for name in ("logon", "device", "email", "file", "http"):
+        (tmp_path / f"{name}.csv").write_text("id,date,user,pc,activity,to,size,attachments,filename,url\nE1,2010-01-04 09:00,u,pc,Logon,,,,,\n")
+    with pytest.raises(ValueError):                           # dates must be MM/DD/YYYY HH:MM:SS
+        load_dataset(str(tmp_path), **quiet)
 
 
 def test_login_throttle_last(client):

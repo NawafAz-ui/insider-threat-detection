@@ -41,7 +41,7 @@ SCHEMAS = {
          "label": {"enum": [0, 1]}, "split": {"enum": ["train", "validation", "test"]}}),
     "user_baselines": obj(
         ["_id", "n", "mean", "m2"],
-        {"_id": USER, "n": {"bsonType": NUM, "minimum": 1},
+        {"_id": USER, "n": {"bsonType": NUM, "minimum": 1}, "last": {"bsonType": "date"},
          "mean": obj(BASE_METRICS, {m: {"bsonType": NUM} for m in BASE_METRICS}),
          "m2": obj(BASE_METRICS, {m: {"bsonType": NUM, "minimum": 0} for m in BASE_METRICS})}),
     "analyst_accounts": obj(

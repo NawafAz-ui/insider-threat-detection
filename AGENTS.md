@@ -16,7 +16,7 @@ Guide for AI coding agents and new team members. Facts here were read from the c
 | `backend/scripts/` | operator scripts: data generator, accounts, setup and connection checks, TLS cert, backup, demos |
 | `backend/tests/` | pytest suite (in-memory database, no MongoDB needed) |
 | `frontend/` | React 18 + Vite dashboard (`src/pages`, `src/components`, `api.js`, `router.js`, `format.js`) |
-| `docs/` | CSV layout, API, database, requirements, architecture, security, demo script, weekly plans, Week 3 methodology and use cases |
+| `docs/` | CSV layout, API, database, requirements, architecture, security, demo script, weekly plans, Week 3 methodology, use cases, data flow, tools, data rules, evaluation criteria; `docs/figures/` holds the diagrams |
 | `mongo-init/init-users.js` | creates the restricted `itd_engine` and `itd_api` MongoDB users (secure compose only) |
 | `docker-compose.yml`, `docker-compose.secure.yml` | MongoDB 7 (plain, or with authentication and separate accounts) |
 | `start_all.ps1` | Windows: starts database, API and dashboard |
@@ -30,13 +30,14 @@ cd backend
 pip install -r requirements.txt
 python scripts/check_setup.py                              # environment check
 python scripts/generate_synthetic_cert.py data/cert_synthetic   # defaults: 120 users, 90 days, 12 insiders, seed 7
-python -m itd.engine --data data/cert_synthetic --retrain       # batch run; prints precision/recall/F1/PR-AUC
+python -m itd.engine --data data/cert_synthetic --retrain       # batch run; prints precision/recall/F1/PR-AUC/Brier
+python scripts/run_experiments.py --seeds 5                # matched experiments A to D on generated data (no database)
 python -m scripts.create_analyst alice "ChooseAStrongOne1!" analyst
 python -m itd.serve                                        # API on http://127.0.0.1:8000 (docs at /docs); HTTPS on 8443 if certs/ exists
-pytest -q                                                  # 32 pass, 1 skipped
-ITD_TEST_MONGO=mongodb://127.0.0.1:27017 pytest -q         # 33 pass: adds the real-MongoDB schema test (uses its own temporary database)
+pytest -q                                                  # 42 pass, 1 skipped
+ITD_TEST_MONGO=mongodb://127.0.0.1:27017 pytest -q         # 43 pass: adds the real-MongoDB schema test (uses its own temporary database)
 ```
-Frontend: `cd frontend && npm install && npm run dev` (http://localhost:5173, proxies `/api` to port 8000) and `npm run build` (must pass; 40 modules).
+Frontend: `cd frontend && npm install && npm run dev` (http://localhost:5173, proxies `/api` to port 8000) and `npm run build` (must pass; 41 modules).
 Database: `docker compose up -d`. On this laptop the container is named `insider-threat-detection-mongo-1` (older docs say `itd-mongo-1`).
 Database admin: `python -m itd.schema apply|check`, `python -m scripts.analysts list|add|role|password|delete`, `python scripts/backup_db.py [--restore <dir>]`.
 Checks and demos: `python scripts/check_connection.py --user alice --password ...` (needs API and dashboard running), `scripts/demo_api.py`, `scripts/demo_db.py`, `scripts/demo_schema.py`.
@@ -49,7 +50,7 @@ CERT-layout CSV files
   -> sessionize.py              Logon opens, Logoff closes; missing logoff ends at next Logon or 12 h
   -> features.py + baselines.py 28 session + 10 deviation + 1 recency = 39 features; per-user running mean/std (Welford), trusted after 5 sessions, z capped at 10
   -> models.py                  LogisticRegression, XGBoost, IsolationForest; time split 70/15/15
-  -> risk.py                    weights = validation F1 share; score 0-100; threshold = best validation F1
+  -> risk.py                    sigmoid (Platt) calibration per model on validation data; weights = validation F1 share; score 0-100; threshold = best validation F1
   -> explain.py                 SHAP (XGBoost only) top 3 + top 3 baseline deviations, in plain words
   -> engine.py                  writes results, user_baselines, trained_models (+GridFS), runs to MongoDB
 MongoDB <- api.py (FastAPI) <- security.py (bcrypt, JWT, roles, throttling, access log)
@@ -58,7 +59,7 @@ Browser (React) -> Vite proxy /api -> FastAPI
 ```
 - Only the engine writes results, baselines, models and runs. The API reads them and writes only `access_log`. `engine.run` deletes and replaces `results` and `user_baselines` on every run; `--retrain` also deletes saved models.
 - Models are saved to GridFS with SHA-256 hashes; `load_models` raises `ModelIntegrityError` if a hash does not match.
-- Assistant: builds evidence ids R, S1 to S3, B1 to B3 from one stored session (no user or PC names). If `LLM_API_KEY` is set it calls the Anthropic Messages API (`LLM_URL`, model `LLM_MODEL`, default `claude-sonnet-5-5`) and keeps only evidence ids that exist; on any failure, or with no key, it answers from a local template (`mode: "template"`).
+- Assistant: builds evidence ids R, S1 to S3, B1 to B3 from one stored session (no user or PC names). If `LLM_API_KEY` is set it calls the Anthropic Messages API (`LLM_URL`, model `LLM_MODEL`, default `claude-sonnet-5-5`) and keeps only statements that cite existing evidence ids and use numbers found in the cited items; on any failure, a reply in the wrong format, or with no key, it answers from a local template (`mode: "template"`).
 - `db.py`: `MONGO_URI=mock` switches to mongomock for tests. `get_db("engine")` and `get_db("api")` can use different MongoDB accounts (`MONGO_URI_ENGINE`, `MONGO_URI_API`).
 - Frontend does no calculation. Hash routes: `#/`, `#/session/S0000123`, `#/user/U0027`. `api.js` keeps the token in `sessionStorage` and dispatches `auth-expired` on a 401.
 
@@ -76,22 +77,21 @@ Six collections plus GridFS: `results` (one scored session, `_id` = session id l
 - `test_login_throttle_last` must stay last: failed logins lock the test client's address.
 - `pytest.ini` sets `--basetemp=.pytest_tmp` and disables the cache provider.
 
-## 9. Known gaps between the proposal and the code (open as of 31 October 2026)
-1. No Platt calibration (`risk.py`); the proposal promises it. Isolation Forest is only min-max scaled.
-2. Hosted assistant answers are not checked statement by statement (`assistant.py`, `_call_llm`); the proposal promises this. Only unknown evidence ids are dropped.
-3. Per-model thresholds in the reported test metrics are picked on test labels (`risk.evaluate_model`, called from `engine.py`). The combined score uses a validation threshold (correct).
-4. `n_distinct_pcs_day` and `n_sessions_day` use the whole day (`features.py`), so later sessions leak into earlier ones.
-5. Re-running the engine without `--retrain` loads saved baselines and replays the data onto them (`engine.py`); last-session time is not saved, so recency breaks across runs.
-6. The user page baseline is the end-of-batch state, not the state used to score older sessions.
-7. `metrics` key `pr_auc` is average precision (`sklearn.average_precision_score`).
-8. Not yet run: real CERT r4.2 or SPEDIA (the SPEDIA adapter was tested on a stand-in file only), the secure compose start-up script, HTTPS in a browser, the hosted model with a real key. No frontend tests. Memory use at full CERT size is unmeasured.
-9. Sign out only removes the browser token; there is no server-side revocation.
-Fixed in Week 3: offline answer said "above the flag threshold" for sessions under the threshold; heading now says "What drove the XGBoost score".
+## 9. Known gaps between the proposal and the code (open as of 1 November 2026)
+1. Calibration is a two-parameter sigmoid per model, fitted on a validation part with few malicious sessions, so the curve can be noisy (`risk.py`, `CALIBRATION_C`). Isolation Forest is still min-max scaled before it is calibrated.
+2. Hosted assistant statements are checked mechanically (`assistant.check_statements`): each must cite an existing evidence id and every number in it must appear in the cited items. The check cannot judge whether a plausible sentence is a sensible reading. It was tested with fake replies only; the hosted call has never been tried with a real key.
+3. The user page baseline is the end-of-batch state, not the state used to score older sessions.
+4. `metrics` key `pr_auc` is average precision (`sklearn.average_precision_score`).
+5. The main database (`insider_threat`) was rebuilt with `--retrain` on 1 November 2026 (7,329 sessions, 70 flagged, threshold 8.2); `docs/DEMO.md` and `docs/screenshots/` were refreshed from that run (screenshots 2 and 9 are data-independent and were not retaken; the terminal screenshots 1, 12 and 13 are real command output rendered as images).
+6. Not yet run: real CERT r4.2 or SPEDIA (the SPEDIA adapter was tested on a stand-in file only), the secure compose start-up script, HTTPS in a browser, the hosted model with a real key. No frontend tests; the new dashboard table and CSV download were checked by building and by rendering with sample data, not in a browser. Memory use at full CERT size is unmeasured (about 308 MiB peak for the generated 7,329-session run).
+7. Sign out only removes the browser token; there is no server-side revocation.
+8. Results are replaced on every run (delete, then insert): an interrupted run leaves the results incomplete.
+Fixed in Week 3: offline answer said "above the flag threshold" for sessions under the threshold; heading now says "What drove the XGBoost score"; per-model thresholds are chosen on validation data (also in `cross_eval.py`); `n_distinct_pcs_day` and `n_sessions_day` count only the sessions up to the current one; saved baselines keep the last-session time, and a re-run on the same data rebuilds the baseline instead of counting it twice; calibration added; hosted statements checked.
 
 ## 10. Course context (not visible in the code)
 - The supervisor gives weekly task tables; the group splits the work. Prototype and research-and-methodology are handled by Fahim and one teammate; review-paper work by the third member.
 - Week 1 and 2 prototype work is recorded in `docs/WEEK2_PLAN.md`, `docs/DEMO.md`, `docs/REQUIREMENTS.md`.
-- Week 3 (submission 1 November 2026) is a 7-day table with two tracks per day (research and methodology, prototype development). Fahim owns Days 1, 2 and 7. Output: `docs/METHODOLOGY.md`, `docs/USE_CASES.md`, `docs/WEEK3_PLAN.md`, merged into the team's Word document `Group7_Research_and_Methodology.docx` (repo root, untracked) as sections 12 (use cases, roles, access control), 13 (workflow and processing stages), 21 (prototype status, issues, test record) and 22 (review against objectives and research gaps). Later sections were renumbered (old 12 to 19 became 14 to 20 and 23) and a few statements that went stale after revision 86fdfc5 were updated.
+- Week 3 (submission 1 November 2026) is a 7-day table with two tracks per day (research and methodology, prototype development). Fahim first owned Days 1, 2 and 7; on 1 November the group decided to do the whole table. Output: `docs/METHODOLOGY.md`, `docs/USE_CASES.md`, `docs/WEEK3_PLAN.md`, `docs/ACTION_PLAN_REMAINING_ROWS.md` and the sources `docs/DATAFLOW.md`, `docs/TOOLS_AND_ALGORITHMS.md`, `docs/DATA_RULES.md`, `docs/EVALUATION_CRITERIA.md` (figures in `docs/figures/`), merged into the team's Word document `Group7_Research_and_Methodology.docx` (repo root). New Word sections 12 (use cases, roles, access control), 13 (workflow and processing stages), 21 (prototype status, issues, test record) and 22 (review against objectives and research gaps); new subsections at the end of Sections 11 (data-flow diagrams, components), 14 (preprocessing, expected outputs, validation rules), 16 (algorithms, tools, versions) and 17 (indicators, experiments A to D, test cases). Also added after Section 23: Appendices A (sequence and database diagrams, security boundaries), B (database and API documentation), C (pseudocode), D (advanced features, acceptance criteria); the figures are in `docs/figures/`. Later sections were renumbered (old 12 to 19 became 14 to 20 and 23) and statements that went stale after revision 86fdfc5 were updated. The old copy of the Word file in the owner's Downloads folder is the original.
 - A separate weekly literature task (understand the topic and collect papers) has no prototype work.
 - Related Word documents (outside the repo, in the owner's Downloads folder): the Initial Project Proposal (Round 3), the Week 2 Literature Search and Research Foundation (20 studies S1-S20, search strings, research gap) and Research and Methodology (research questions RQ1-RQ5, evaluation plan, repository audit). The methodology document is the most careful about claims; prefer its wording.
 - Known document inconsistencies: two different sets of literature search strings; proposal says five collections and three API functions (code has six and seven); "no study combines..." wording in the proposal is stronger than the evidence.

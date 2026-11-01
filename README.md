@@ -77,7 +77,7 @@ Interactive docs: http://127.0.0.1:8000/docs
 ## Test
 ```powershell
 cd backend
-pytest -q                                                        # 32 tests with an in-memory database; set ITD_TEST_MONGO=mongodb://localhost:27017 to add the real-server test
+pytest -q                                                        # 42 tests with an in-memory database; set ITD_TEST_MONGO=mongodb://localhost:27017 to add the real-server test
 ```
 
 ## Using real data

@@ -1,4 +1,5 @@
-"""User-relative baselines: running mean / std per user (Welford), updated after every session."""
+"""User-relative baselines: running mean / std per user (Welford), updated after every session.
+The state saved per user also holds the start time of the last session, so recency carries over to the next batch."""
 import numpy as np
 import pandas as pd
 from .features import BASE_METRICS, DEV_FEATURES
@@ -24,6 +25,7 @@ def add_deviations(s: pd.DataFrame, prior: dict | None = None):
     mean/std *before* each session (mean_*, std_*) and hours_since_prev_session.
     Returns (frame, final_state) where final_state is the baseline to store per user."""
     prior = prior or {}
+    seen = set()
     X = s[BASE_METRICS].to_numpy(float)
     users = s["user"].to_numpy()
     starts = s["start"].to_numpy()
@@ -31,9 +33,17 @@ def add_deviations(s: pd.DataFrame, prior: dict | None = None):
     dev = np.zeros((n_rows, k)); mean_b = np.zeros((n_rows, k)); std_b = np.zeros((n_rows, k))
     recency = np.zeros(n_rows)
     state = {u: dict(n=p["n"], mean=np.array([p["mean"][m] for m in BASE_METRICS]),
-                     m2=np.array([p["m2"][m] for m in BASE_METRICS]), last=None) for u, p in prior.items()}
+                     m2=np.array([p["m2"][m] for m in BASE_METRICS]),
+                     last=np.datetime64(p["last"]) if p.get("last") else None) for u, p in prior.items()}
     floors = np.array([_floor(m) for m in BASE_METRICS])
     for i in range(n_rows):
+        if users[i] not in seen:
+            # A saved baseline is kept only if this batch continues after its last session. If the batch starts at or
+            # before that time (the same data again) or the saved state has no last-session time, rebuild from the batch.
+            seen.add(users[i])
+            old = state.get(users[i])
+            if old is not None and (old["last"] is None or starts[i] <= old["last"]):
+                del state[users[i]]
         st = state.setdefault(users[i], dict(n=0, mean=np.zeros(k), m2=np.zeros(k), last=None))
         n = st["n"]
         std = np.sqrt(st["m2"] / n) if n > 1 else np.zeros(k)
@@ -53,5 +63,7 @@ def add_deviations(s: pd.DataFrame, prior: dict | None = None):
     for j, m in enumerate(BASE_METRICS):
         out[f"mean_{m}"], out[f"std_{m}"] = mean_b[:, j], std_b[:, j]
     final = {u: {"n": int(v["n"]), "mean": dict(zip(BASE_METRICS, map(float, v["mean"]))),
-                 "m2": dict(zip(BASE_METRICS, map(float, v["m2"])))} for u, v in state.items()}
+                 "m2": dict(zip(BASE_METRICS, map(float, v["m2"]))),
+                 **({"last": pd.Timestamp(v["last"]).to_pydatetime()} if v["last"] is not None else {})}
+             for u, v in state.items()}
     return out, final

@@ -8,6 +8,7 @@ import os
 import time
 import numpy as np
 from bson import ObjectId
+from sklearn.metrics import brier_score_loss
 from . import config
 from .baselines import add_deviations
 from .db import get_db, get_fs
@@ -15,7 +16,7 @@ from .explain import shap_values, top_baseline_deviations, top_shap
 from .features import FEATURES, session_features
 from .ingest import load_dataset
 from .models import dumps, loads, score_models, time_split, train_models
-from .risk import combine, evaluate, evaluate_model, fit_risk_engine
+from .risk import calibrate, combine, evaluate, evaluate_model, fit_risk_engine
 
 BLOCK = 50_000
 
@@ -90,12 +91,14 @@ def run(data_dir, retrain=False, report_dir="reports", pseudonymize=None):
     t = step("models", t)
 
     print("5/5 Risk engine + SHAP ...")
-    scores = score_models(models, extra, X)
+    raw = score_models(models, extra, X)
+    # models saved before calibration was added have no calibrators and keep scoring with raw scores
+    scores = calibrate(raw, risk_cfg["calibrators"]) if risk_cfg.get("calibrators") else raw
     risk = combine(scores, risk_cfg["weights"])
     thr = risk_cfg["threshold"]
-    if loaded is None:  # test-set evaluation (never used for tuning)
-        metrics["test"] = {"risk_engine": evaluate(y[te], risk[te], thr),
-                           **{k: evaluate_model(y[te], scores[k][te]) for k in scores}}
+    if loaded is None:  # test-set evaluation (never used for tuning: every threshold comes from validation data)
+        metrics["test"] = {"risk_engine": {**evaluate(y[te], risk[te], thr), "brier": float(brier_score_loss(y[te], risk[te] / 100))},
+                           **{k: evaluate_model(y[te], scores[k][te], risk_cfg["val_thresholds"][k], raw[k][te]) for k in scores}}
         metrics["sizes"] = {"train": len(tr), "validation": len(va), "test": len(te)}
         db.trained_models.update_one({"_id": "current"}, {"$set": {"metrics": metrics}})
     splits = np.empty(len(feats), dtype=object); splits[tr], splits[va], splits[te] = "train", "validation", "test"
@@ -133,7 +136,8 @@ def run(data_dir, retrain=False, report_dir="reports", pseudonymize=None):
 
     info = {"seconds": round(time.time() - t0, 1), "step_seconds": T, "sessions": len(feats), "flagged": int(flagged),
             "threshold": thr, "weights": risk_cfg["weights"], "at": time.time(),
-            "metrics": {"test": metrics.get("test"), "sizes": metrics.get("sizes"), "validation_f1": risk_cfg.get("val_f1")}}
+            "metrics": {"test": metrics.get("test"), "sizes": metrics.get("sizes"), "validation_f1": risk_cfg.get("val_f1"),
+                        "validation_thresholds": risk_cfg.get("val_thresholds"), "calibrators": risk_cfg.get("calibrators")}}
     db.runs.insert_one({"_id": run_id, **info})
     os.makedirs(report_dir, exist_ok=True)
     with open(os.path.join(report_dir, "metrics.json"), "w") as f:
@@ -147,9 +151,9 @@ def print_summary(info, risk_cfg, metrics):
     print("Weights:", {k: round(v, 3) for k, v in risk_cfg["weights"].items()}, "| threshold:", round(risk_cfg["threshold"], 1))
     t = metrics.get("test")
     if t:
-        print(f"{'model':12s} {'prec':>6s} {'recall':>7s} {'F1':>6s} {'PR-AUC':>7s}   (test set)")
+        print(f"{'model':12s} {'prec':>6s} {'recall':>7s} {'F1':>6s} {'PR-AUC':>7s} {'Brier':>7s}   (test set)")
         for k, m in t.items():
-            print(f"{k:12s} {m.get('precision', 0):6.2f} {m.get('recall', 0):7.2f} {m.get('f1', 0):6.2f} {m.get('pr_auc') or 0:7.2f}")
+            print(f"{k:12s} {m.get('precision', 0):6.2f} {m.get('recall', 0):7.2f} {m.get('f1', 0):6.2f} {m.get('pr_auc') or 0:7.2f} {m.get('brier') or 0:7.3f}")
 
 
 if __name__ == "__main__":

@@ -18,8 +18,8 @@ expected HTTP status codes.
      3 Login with an injection attempt                       422      422 PASS
      4 Login with the correct password                       200      200 PASS
      5 List flagged sessions, highest risk first             200      200 PASS
-     6 View session details for `S0003029`                   200      200 PASS
-     7 View user history for `U0027`                         200      200 PASS
+     6 View session details for `S0002352`                   200      200 PASS
+     7 View user history for `U0073`                         200      200 PASS
      8 View latest batch run                                 200      200 PASS
      9 Ask the assistant about a session                     200      200 PASS
     10 Invalid user ID format                                422      422 PASS
@@ -31,10 +31,10 @@ expected HTTP status codes.
 
 -   Database connection check: passed.
 -   Sessions stored: **7,329**.
--   Flagged sessions: **66**.
--   Risk threshold: **19.3**.
--   Highest-risk example: session `S0003029`, with a risk score of
-    **100.0**.
+-   Flagged sessions: **70**.
+-   Risk threshold: **8.2**.
+-   Highest-risk example: session `S0002352`, with a risk score of
+    **95.3**.
 -   The assistant returned an explanation based on stored evidence using
     template mode; no language model was used for this response.
 -   The demo finished with:
@@ -57,3 +57,5 @@ Save the terminal screenshots in `docs/screenshots/`:
     dashboard connection checks.
 -   `10-demo-api-part1.png` --- API demo calls 1--6.
 -   `10-demo-api-part2.png` --- API demo calls 7--13.
+
+Refreshed on 1 November 2026 after the main database was rebuilt with `--retrain` (calibrated scores; the first version of this file described the run before calibration: 66 flagged, threshold 19.3).
