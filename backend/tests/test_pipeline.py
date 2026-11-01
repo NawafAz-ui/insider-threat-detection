@@ -274,7 +274,6 @@ def test_results_are_linked_to_their_run(client):
 
 
 def test_schema_rejects_bad_documents():
-    from datetime import datetime
     from itd import schema
     S = schema.SCHEMAS
     good = {"_id": "alice", "password_hash": "$2b$12$" + "a" * 53, "role": "analyst"}

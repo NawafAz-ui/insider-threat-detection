@@ -6,7 +6,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))   # lets "python scripts/x.py" find the itd package
 import json
 import time
-from itd.db import get_db, get_fs
+from itd.db import get_db
 from itd.security import check_password, hash_password
 
 

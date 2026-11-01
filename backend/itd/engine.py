@@ -9,7 +9,6 @@ import time
 import numpy as np
 from bson import ObjectId
 from sklearn.metrics import brier_score_loss
-from . import config
 from .baselines import add_deviations
 from .db import get_db, get_fs
 from .explain import shap_values, top_baseline_deviations, top_shap

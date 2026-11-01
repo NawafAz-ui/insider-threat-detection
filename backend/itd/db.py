@@ -11,7 +11,6 @@ def _uri(role):
 
 
 def get_db(role="engine"):
-    global _fs
     if role not in _dbs:
         if config.MONGO_URI == "mock":
             import mongomock
