@@ -30,3 +30,6 @@ SESSION_MAX_HOURS = 12
 AFTER_HOURS_START, AFTER_HOURS_END = 19, 7   # after 19:00 or before 07:00
 SPLIT = (0.70, 0.15, 0.15)                   # time-ordered train / validation / test
 RANDOM_STATE = 42
+
+# Batch runs started from the dashboard: dataset folders are looked up by NAME under this folder (itd/jobs.py)
+DATA_ROOT = os.getenv("ITD_DATA_ROOT", "data")

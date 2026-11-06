@@ -43,4 +43,6 @@ This subsection records what was chosen for each part of the pipeline, why, and 
 | Docker and Docker Compose | Local MongoDB | 29.6.2 and 5.3.1 | Same database setup on every team laptop; a second compose file adds authentication and separate accounts. |
 
 The versions are those installed on the tested laptop on 1 November 2026. Because the requirement files give lower bounds only, the resolved versions should be archived with any reported result (Section 19).
+
+Second environment, 5 November 2026: Python 3.14.5, Docker 29.9.2, MongoDB image mongo:7, npm 10.9.2, Vite 5.4.21. The resolved Python packages of this environment are archived in `backend/requirements.lock.txt`.
 <!-- word:end -->

@@ -6,16 +6,19 @@ Every endpoint except login needs the header `Authorization: Bearer <token>`.
 | Method and path | What it does | Success | Errors |
 |---|---|---|---|
 | `GET /api/health` | no login: is the API up and can it reach the database | 200 `{status, database}` | 503 database not reachable |
-| `POST /api/login` | checks the password, returns a token that expires in 30 minutes | 200 `{token, username, expires_minutes}` | 401 wrong login, 422 invalid input, 429 too many failures |
+| `POST /api/login` | checks the password, returns a token that expires in 30 minutes | 200 `{token, username, role, expires_minutes}` | 401 wrong login, 422 invalid input, 429 too many failures |
 | `GET /api/sessions?limit=50&offset=0` | flagged sessions, highest risk first | 200 `{threshold, total, scored, high, sessions[]}` | 401 no/expired token, 403 role not allowed |
 | `GET /api/sessions/{session_id}` | score, model scores, top 3 SHAP behaviors, top 3 baseline differences, evidence ids | 200 | 401, 403, 404 not found, 422 bad id format |
 | `GET /api/users/{user_id}?limit=500` | one user's sessions over time (oldest first), summary counts, and their normal behavior (10 baseline metrics with mean and standard deviation) | 200 `{user, threshold, summary, baseline[], sessions[]}` | 401, 403, 404 unknown user, 422 bad id format |
 | `GET /api/run/latest` | when the batch engine last ran, run time per step, flag threshold, model weights, calibration, test results per model (precision, recall, F1, PR-AUC, Brier score, validation threshold) | 200 | 401, 403, 404 no run yet |
+| `GET /api/run/status` | the newest run request and how it is going (requested, running, done or failed) with dataset, who asked, times and the reason when it failed; an admin also gets the log text | 200 `{request}` (`request` is null when nothing was requested) | 401 |
+| `GET /api/run/datasets` | admin only: dataset folder names under the data folder (`ITD_DATA_ROOT`, default `data`) that contain logon.csv | 200 `{datasets[]}` | 401, 403 not admin |
+| `POST /api/run` body `{"dataset": "cert_synthetic", "retrain": false}` | admin only: files a run request; the worker (`python -m itd.worker`) performs it | 202 request object | 401, 403 not admin, 404 dataset not found, 409 a run is already waiting or in progress, 422 bad input (a folder name only, never a path) |
 | `POST /api/sessions/{session_id}/chat` body `{"question": "..."}` | assistant answer plus the evidence ids it used (hosted answers keep only statements that cite existing evidence and use numbers found in it; `withheld` counts the statements dropped) | 200 `{answer, fields_used, evidence, mode}`, hosted mode adds `withheld` | 401, 403, 404, 422 (question empty or over 300 characters) |
 
 ## Security on every request
 HTTPS (when enabled), token check, analyst role check, strict input validation, and an entry in the access log
-(logins, sessions viewed, users viewed, assistant questions). The API's only database write is the access log.
+(logins, sessions viewed, users viewed, assistant questions, run requests). The API writes only the access log and run requests; the worker writes the progress of a run.
 
 ## Try it
 ```powershell

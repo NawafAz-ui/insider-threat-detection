@@ -14,7 +14,7 @@ NUM = "number"                      # MongoDB: int, long or double
 UNIT = {"bsonType": NUM, "minimum": 0, "maximum": 1}
 SESSION_ID = {"bsonType": "string", "pattern": "^S[0-9]{1,12}$"}
 USER = {"bsonType": "string", "minLength": 1, "maxLength": 64}
-ACTIONS = ["login_ok", "login_failed", "session_viewed", "user_viewed", "assistant_question", "demo_entry"]
+ACTIONS = ["login_ok", "login_failed", "session_viewed", "user_viewed", "assistant_question", "demo_entry", "run_requested"]
 
 
 def obj(required, props, extra_ok=True):
@@ -38,7 +38,7 @@ SCHEMAS = {
              {"metric": {"enum": BASE_METRICS}, "value": {"bsonType": NUM}, "user_mean": {"bsonType": NUM},
               "user_std": {"bsonType": NUM}, "z": {"bsonType": NUM, "minimum": 0, "maximum": 10},
               "text": {"bsonType": "string"}})},
-         "label": {"enum": [0, 1]}, "split": {"enum": ["train", "validation", "test"]}}),
+         "label": {"enum": [0, 1]}, "split": {"enum": ["train", "validation", "test", "scored"]}}),
     "user_baselines": obj(
         ["_id", "n", "mean", "m2"],
         {"_id": USER, "n": {"bsonType": NUM, "minimum": 1}, "last": {"bsonType": "date"},
@@ -54,6 +54,14 @@ SCHEMAS = {
         {"at": {"bsonType": NUM, "minimum": 0}, "user": {"bsonType": "string", "minLength": 1, "maxLength": 64},
          "action": {"enum": ACTIONS}, "ip": {"bsonType": ["string", "null"]},
          "session_id": SESSION_ID, "viewed_user": USER, "question": {"bsonType": "string", "maxLength": 300}}),
+    "run_requests": obj(
+        ["_id", "status", "dataset", "retrain", "requested_by", "requested_at"],
+        {"_id": {"bsonType": "objectId"}, "status": {"enum": ["requested", "running", "done", "failed"]},
+         "dataset": {"bsonType": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$"}, "retrain": {"bsonType": "bool"},
+         "requested_by": USER, "requested_at": {"bsonType": NUM, "minimum": 0},
+         "started_at": {"bsonType": NUM, "minimum": 0}, "finished_at": {"bsonType": NUM, "minimum": 0},
+         "message": {"bsonType": "string", "maxLength": 500}, "log_tail": {"bsonType": "string", "maxLength": 2000},
+         "run_id": {"bsonType": "objectId"}}),
     "runs": obj(
         ["_id", "at", "seconds", "sessions", "flagged", "threshold", "weights"],
         {"_id": {"bsonType": "objectId"}, "at": {"bsonType": NUM, "minimum": 0}, "seconds": {"bsonType": NUM, "minimum": 0},
@@ -78,6 +86,7 @@ INDEXES = {
                    ([("action", 1), ("ip", 1), ("at", -1)], {"name": "throttle_by_ip"}),
                    ([("at", -1)], {"name": "newest_first"})],
     "runs": [([("at", -1)], {"name": "latest_run"})],
+    "run_requests": [([("requested_at", -1)], {"name": "newest_request"}), ([("status", 1)], {"name": "by_status"})],
 }
 
 
