@@ -14,6 +14,8 @@ from .db import get_db, get_fs
 from .explain import shap_values, top_baseline_deviations, top_shap
 from .features import FEATURES, session_features
 from .ingest import load_dataset
+from . import rules
+from . import validate
 from .models import dumps, loads, score_models, time_split, train_models
 from .risk import calibrate, combine, evaluate, evaluate_model, fit_risk_engine
 
@@ -55,6 +57,11 @@ def run(data_dir, retrain=False, report_dir="reports", pseudonymize=None):
     T = {}
     run_id = ObjectId()                                             # links every result to this batch run
     t0 = time.time()
+    print("0/5 Input validation ...")
+    check = validate.validate_folder(data_dir)
+    print(validate.format_report(check))
+    if check["status"] == "failed":
+        raise SystemExit("Input validation failed; fix the errors above and run again.")
     db = get_db()
 
     def step(name, since):
@@ -66,7 +73,7 @@ def run(data_dir, retrain=False, report_dir="reports", pseudonymize=None):
     sessions, agg = load_dataset(data_dir, pseudonymize)
     print(f"    {len(sessions):,} sessions, {int(sessions.label.sum())} malicious")
     t = step("ingestion_and_sessions", t)
-    print("3/5 Behavioral analytics (39 features + baselines) ...")
+    print(f"3/5 Behavioral analytics ({len(FEATURES)} features + baselines) ...")
     feats = session_features(sessions, agg)
     prior = None
     if not retrain and db.user_baselines.count_documents({}):
@@ -98,11 +105,15 @@ def run(data_dir, retrain=False, report_dir="reports", pseudonymize=None):
     if loaded is None:  # test-set evaluation (never used for tuning: every threshold comes from validation data)
         metrics["test"] = {"risk_engine": {**evaluate(y[te], risk[te], thr), "brier": float(brier_score_loss(y[te], risk[te] / 100))},
                            **{k: evaluate_model(y[te], scores[k][te], risk_cfg["val_thresholds"][k], raw[k][te]) for k in scores}}
+        metrics["test"].update(rules.reference_metrics(feats, y, va, te))      # simple reference methods, thresholds from validation data
         metrics["sizes"] = {"train": len(tr), "validation": len(va), "test": len(te)}
         db.trained_models.update_one({"_id": "current"}, {"$set": {"metrics": metrics}})
-    splits = np.empty(len(feats), dtype=object); splits[tr], splits[va], splits[te] = "train", "validation", "test"
+    splits = np.empty(len(feats), dtype=object)
+    if loaded is None:
+        splits[tr], splits[va], splits[te] = "train", "validation", "test"
+    else:                                   # a saved model never saw this batch: its time parts mean nothing here
+        splits[:] = "scored"
 
-    db.results.delete_many({})
     ids = feats.index.to_numpy()
     cols = ["user", "pc", "start", "end", "label"] + [c for c in feats.columns if c.startswith(("mean_", "std_", "dev_"))] + \
            [m for m in set(FEATURES) | set(m[4:] for m in FEATURES if m.startswith("dev_"))]
@@ -123,7 +134,9 @@ def run(data_dir, retrain=False, report_dir="reports", pseudonymize=None):
                          "model_scores": {m: round(float(v[i]), 4) for m, v in scores.items()},
                          "top_shap": top_shap(sv[k], X[i], row), "baseline_deviations": top_baseline_deviations(row),
                          "label": int(row["label"]), "split": splits[i]})
+        db.results.delete_many({"_id": {"$in": [d["_id"] for d in docs]}})      # same ids from an earlier run are replaced
         db.results.insert_many(docs)
+    db.results.delete_many({"run_id": {"$ne": run_id}})            # old results go only after the new ones are saved
     db.results.create_index([("flagged", 1), ("risk_score", -1)])
     db.results.create_index([("user", 1), ("start", 1)])          # user history page
     t = step("risk_and_shap", t)
@@ -134,15 +147,17 @@ def run(data_dir, retrain=False, report_dir="reports", pseudonymize=None):
     step("save_baselines", t)
 
     info = {"seconds": round(time.time() - t0, 1), "step_seconds": T, "sessions": len(feats), "flagged": int(flagged),
-            "threshold": thr, "weights": risk_cfg["weights"], "at": time.time(),
+            "threshold": thr, "weights": risk_cfg["weights"], "at": time.time(), "validation": check["summary"],
             "metrics": {"test": metrics.get("test"), "sizes": metrics.get("sizes"), "validation_f1": risk_cfg.get("val_f1"),
                         "validation_thresholds": risk_cfg.get("val_thresholds"), "calibrators": risk_cfg.get("calibrators")}}
     db.runs.insert_one({"_id": run_id, **info})
     os.makedirs(report_dir, exist_ok=True)
     with open(os.path.join(report_dir, "metrics.json"), "w") as f:
         json.dump({"run": {k: v for k, v in info.items() if k not in ("at", "metrics")}, **metrics}, f, indent=2, default=str)
+    with open(os.path.join(report_dir, "validation.json"), "w") as f:
+        json.dump(check, f, indent=2)
     print_summary(info, risk_cfg, metrics)
-    return info
+    return {**info, "run_id": run_id}
 
 
 def print_summary(info, risk_cfg, metrics):

@@ -28,7 +28,7 @@ This subsection turns the evaluation plan above into indicators with a definitio
 | Peak memory | Maximum resident set size of the engine process | Report with the data size; not inferred for larger data | 322,846,720 bytes (about 308 MiB) for the same run |
 | API response time | Median and 95th percentile of repeated authenticated requests | Under two seconds (NF3) | List 3.7 and 5.4 ms; detail 2.7 and 3.5 ms; user history 5.1 and 6.5 ms; latest run 2.0 and 3.1 ms; offline chat 2.5 and 3.8 ms |
 | Page load in a browser | Navigation until the content appears | Under two seconds (NF3) | Not measured |
-| Test pass rate | Tests passed / tests run | All pass; skipped tests are named | 42 passed and 1 skipped (the real-server test); 43 passed with a real MongoDB server |
+| Test pass rate | Tests passed / tests run | All pass; skipped tests are named | 74 passed and 1 skipped (the real-server test) on the second computer on 7 November 2026; 42 passed and 1 skipped on the first computer on 1 November 2026; 43 passed with a real MongoDB server |
 
 The API times were taken in the same process, without a network and without a browser, so they show that the server work is small, not what an analyst experiences. The memory and time values are for 7,329 sessions only; the full CERT r4.2 data has 32.8 million events and has not been run.
 
@@ -48,6 +48,19 @@ The API times were taken in the same process, without a network and without a br
 | D raw or calibrated | Calibrated scores | 0.95 (0.89 to 1.00) | Precision 0.96; recall 0.94; Brier 0.0009 |
 
 What the comparisons show, and what they do not. XGBoost is the strongest single model, as S1 reports for its own data, and Isolation Forest the weakest. Adding the ten deviation features raised the mean F1 from 0.92 to 0.96, but the ranges overlap, so five data sets do not establish an improvement. Equal weights and weights from validation F1 give the same F1, so the weighting rule did not matter here, and the best single model is as good as the combination. Calibration lowered the Brier score from 0.0034 to 0.0009 and did not change F1. Experiment E, the transfer to SPEDIA, was not run because the real file has not been mapped.
+
+Comparison F, simple reference methods. It was added later and run on a second computer (Windows, Python 3.14.5, 7 November 2026) on the same five generated data sets (seeds 7 to 11). numpy, scikit-learn, xgboost and shap have the same versions as on the first computer; pandas is 3.1.1 instead of 3.0.6. Each reference method has one flag threshold, chosen on the validation part like for the models.
+
+<!-- widths 1900,3000,2000,2993 -->
+| Comparison | Configuration | F1, mean (lowest to highest) | Other values (mean) |
+|---|---|---|---|
+| F reference methods | Combined risk score (all 39 features) | 0.91 (0.82 to 1.00) | Average precision 0.99; precision 0.96; recall 0.88; 0.7 false alarms per 1,000 benign sessions |
+| F reference methods | Rule: after hours with a removable device or leak site | 0.49 (0.38 to 0.61) | Average precision 0.33; precision 0.93; recall 0.34; 0.4 false alarms per 1,000 |
+| F reference methods | Rule: largest deviation from the user's own normal | 0.43 (0.31 to 0.52) | Average precision 0.42; precision 0.47; recall 0.44; 8.5 false alarms per 1,000 |
+| F reference methods | Rule: after-hours session | 0.27 (0.18 to 0.36) | Average precision 0.09; precision 0.23; recall 0.34; 16.4 false alarms per 1,000 |
+| F reference methods | No skill: flag every session | 0.03 (0.02 to 0.03) | Average precision 0.01; precision 0.01; recall 1.00; 1,000 false alarms per 1,000 |
+
+What comparison F shows, and what it does not. The combined risk score is far above every simple method: its lowest F1 (0.82) is above the highest F1 of the best rule (0.61), so on these five data sets it never lost to a rule. The best rule, after hours with a removable device or leak site, is very clean (0.4 false alarms per 1,000 benign sessions) but finds only about a third of the malicious sessions, while the combined score finds 88% at a similar false-alarm rate. The no-skill line (flag every session) is the floor: its F1 is set by the share of malicious sessions. This does not show that the combination beats the best single model: on this computer Logistic Regression and XGBoost both reached a mean F1 of 0.94, against 0.91 for the combined score. Logistic Regression (0.94) and Isolation Forest (0.75) gave the same means and ranges as on the first computer; only the results that depend on XGBoost changed (XGBoost 0.94 instead of 0.98, combined score 0.91 instead of 0.95). XGBoost is not guaranteed to give identical results on different hardware or operating systems; the cause was not tested. The statement above that XGBoost is the strongest single model therefore holds for the first computer only. In the dashboard, a retrained run on the default data (seed 7) gave F1 0.89 for the combined score, 1.00 for Logistic Regression, 0.97 for XGBoost, 0.71 for Isolation Forest, 0.42, 0.48 and 0.26 for the three rules and 0.03 for no skill. The test part of that run has about 16 malicious sessions, so one or two sessions move an F1 value a lot.
 
 <!-- widths 700,1100,5400,2693 -->
 | ID | Requirement | What the test does | Result |
@@ -73,6 +86,10 @@ What the comparisons show, and what they do not. XGBoost is the strongest single
 | TC19 | NF3 | test_list_is_fast: the session list answers in under two seconds. | Passed |
 | TC20 | NF4 | test_https_required_when_enabled: plain HTTP is refused with 426. | Passed; real TLS not tested |
 | TC21 | RQ5 | test_spedia_adapter_and_cross_eval: conversion and cross-dataset run on a stand-in file. | Passed; no real SPEDIA data |
+| TC22 | Input validation | test_validation.py: every rule V1 to V10 with damaged data, the report text, and test_engine_stops_before_reading_when_validation_fails. | Passed |
+| TC23 | Run control | test_run_control.py: admin-only request, one active run, bad folder names, worker done and failed with the reason, stale requests, the schema, and the full path from request through the worker and the real engine to results read through the API. | Passed |
+| TC24 | Reference methods | test_baselines.py: rule definitions, thresholds chosen on validation data only, the no-skill values, and storage of the reference results by the engine. | Passed |
+| TC25 | Run report | test_report.py: content, escaping of text from the database, old runs and empty lists, rounding like the dashboard, and the download endpoint (HTML, logged, not cached, top 10 of the newest run only). | Passed |
 
 Not covered by an automated test: duplicate and boundary events (FR2), unique event ids (FR1), the dashboard (there are no frontend tests; the new results table and CSV download were checked by building the app and by rendering them with sample data, not in a browser), real TLS and trusted certificates, the hosted model with a real key, page timing in a browser and encrypted storage. The demonstration scripts on the main database (Section 21) add manual checks of the database rules and of 13 API calls.
 <!-- word:end -->

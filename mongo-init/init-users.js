@@ -9,7 +9,8 @@ d.createRole({
     { resource: { db: dbName, collection: "runs" }, actions: ["find"] },
     { resource: { db: dbName, collection: "user_baselines" }, actions: ["find"] },
     { resource: { db: dbName, collection: "analyst_accounts" }, actions: ["find"] },
-    { resource: { db: dbName, collection: "access_log" }, actions: ["find", "insert"] },   // the API's only write
+    { resource: { db: dbName, collection: "access_log" }, actions: ["find", "insert"] },     // the API's writes: the access log ...
+    { resource: { db: dbName, collection: "run_requests" }, actions: ["find", "insert"] },   // ... and run requests (the worker updates their progress)
   ],
   roles: [],
 });

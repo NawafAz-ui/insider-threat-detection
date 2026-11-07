@@ -22,6 +22,7 @@ from itd.features import DEV_FEATURES, FEATURES, SESSION_FEATURES, session_featu
 from itd.ingest import load_dataset
 from itd.models import score_models, time_split, train_models
 from itd.risk import best_f1, calibrate, combine, evaluate, fit_risk_engine
+from itd.rules import RULE_NAMES, reference_metrics
 
 FEATURE_SETS = {"28 session features": SESSION_FEATURES, "plus 10 deviations": SESSION_FEATURES + DEV_FEATURES,
                 "plus recency (all 39)": FEATURES}
@@ -60,7 +61,7 @@ def ensemble(pv, yv, pt, yt, weights):
 
 
 def one_seed(f):
-    out = {"A": {}, "B": {}, "C": {}, "D": {}}
+    out = {"A": {}, "B": {}, "C": {}, "D": {}, "F": {}}
     for label, cols in FEATURE_SETS.items():
         s = split_scores(f, cols)
         if s is None:
@@ -80,15 +81,19 @@ def one_seed(f):
         raw_f1 = {k: best_f1(yv, v)[0] for k, v in raw_v.items()}            # D: same weights rule, raw scores
         out["D"]["raw scores"] = ensemble(raw_v, yv, raw_t, yt, {k: v / sum(raw_f1.values()) for k, v in raw_f1.items()})
         out["D"]["calibrated scores"] = out["B"][label]
+    tr, va, te = time_split(len(f))                                          # F: simple reference methods
+    out["F"]["combined risk score (all 39 features)"] = out["B"]["plus recency (all 39)"]
+    for key, m in reference_metrics(f, f["label"].to_numpy(int), va, te).items():
+        out["F"][RULE_NAMES[key]] = m
     return out
 
 
 def summarize(runs):
     keys = ("precision", "recall", "f1", "pr_auc", "fp_per_1000_benign", "alerts_per_1000", f"recall_top_{TOP_K}", "brier")
     table = {}
-    for ex in "ABCD":
+    for ex in "ABCDF":
         for cfg in runs[0][ex]:
-            vals = {k: [r[ex][cfg][k] for r in runs] for k in keys}
+            vals = {k: [r[ex][cfg][k] for r in runs] for k in keys if k in runs[0][ex][cfg]}      # F has no Brier score or top-k recall
             table.setdefault(ex, {})[cfg] = {k: {"mean": float(np.mean(v)), "min": float(np.min(v)), "max": float(np.max(v))} for k, v in vals.items()}
     return table
 
@@ -117,10 +122,10 @@ if __name__ == "__main__":
         json.dump({"note": "Generated data only. Threshold from validation data; metrics on the test part. mean with min and max over seeds.",
                    "seeds": used, "data": vars(args), "summary": table, "per_seed": runs}, fh, indent=2)
     print(f"{len(runs)} seeds {used}; {args.users} users, {args.days} days, {args.insiders} insiders. mean (min to max) on the test part\n")
-    for ex, title in (("A", "A single models"), ("B", "B feature groups (combined score)"), ("C", "C combination rule"), ("D", "D raw vs calibrated (combined score)")):
+    for ex, title in (("A", "A single models"), ("B", "B feature groups (combined score)"), ("C", "C combination rule"), ("D", "D raw vs calibrated (combined score)"), ("F", "F simple reference methods")):
         print(title)
         for cfg, m in table[ex].items():
             print(f"  {cfg:38s} F1 {m['f1']['mean']:.2f} ({m['f1']['min']:.2f} to {m['f1']['max']:.2f})  AP {m['pr_auc']['mean']:.2f}  "
                   f"precision {m['precision']['mean']:.2f}  recall {m['recall']['mean']:.2f}  FP/1000 benign {m['fp_per_1000_benign']['mean']:.1f}  "
-                  f"top-{TOP_K} recall {m[f'recall_top_{TOP_K}']['mean']:.2f}  Brier {m['brier']['mean']:.4f}")
+                  f"top-{TOP_K} recall {m.get(f'recall_top_{TOP_K}', {}).get('mean', float('nan')):.2f}  Brier {m.get('brier', {}).get('mean', float('nan')):.4f}")
         print()
