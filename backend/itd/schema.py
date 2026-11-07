@@ -14,7 +14,7 @@ NUM = "number"                      # MongoDB: int, long or double
 UNIT = {"bsonType": NUM, "minimum": 0, "maximum": 1}
 SESSION_ID = {"bsonType": "string", "pattern": "^S[0-9]{1,12}$"}
 USER = {"bsonType": "string", "minLength": 1, "maxLength": 64}
-ACTIONS = ["login_ok", "login_failed", "session_viewed", "user_viewed", "assistant_question", "demo_entry", "run_requested"]
+ACTIONS = ["login_ok", "login_failed", "session_viewed", "user_viewed", "assistant_question", "demo_entry", "run_requested", "report_viewed"]
 
 
 def obj(required, props, extra_ok=True):

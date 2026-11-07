@@ -21,7 +21,7 @@ Three tiers, as in the proposal, plus a batch detection engine that fills the da
             D7[("run_requests")]    end
     subgraph API["Backend tier: FastAPI"]
         SEC["Security controls: HTTPS, token, role, validation, throttling, access log"]
-        EP["Endpoints: login, sessions, session detail, users, run/latest, run request and status, chat, health"]
+        EP["Endpoints: login, sessions, session detail, users, run/latest, run request and status, run report, chat, health"]
         AS["Evidence-grounded assistant"]
     end
     subgraph UI["Frontend tier: React"]
@@ -50,6 +50,8 @@ Three tiers, as in the proposal, plus a batch detection engine that fills the da
 | `GET /api/health` and clear error messages | the user can tell whether the API or the database is down |
 | Database validation rules, indexes and `run_id` links | consistent data; results are tied to the run that produced them |
 | `POST /api/run`, `GET /api/run/status`, `python -m itd.worker` and the Run analysis panel | an administrator starts a batch run from the dashboard; the API files a request and the worker performs it |
+| `GET /api/run/report` and the Download run report button | a printable HTML report of the newest run, with the simple reference methods next to the models |
+| Reference methods (`itd/rules.py`) | three simple rules and a no-skill line that the models are compared with, in the engine, the experiments (comparison F) and the run table |
 | Input validation step (`itd/validate.py`) | bad data is named and stopped before the engine reads it |
 | Login throttling and model integrity check | extra protection from the security section |
 
