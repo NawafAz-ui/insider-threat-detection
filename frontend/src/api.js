@@ -4,7 +4,8 @@ let token = sessionStorage.getItem("token") || "";
 
 export const isLoggedIn = () => !!token;
 export const getUsername = () => sessionStorage.getItem("username") || "";
-export function logout() { token = ""; sessionStorage.removeItem("token"); sessionStorage.removeItem("username"); }
+export const getRole = () => sessionStorage.getItem("role") || "";
+export function logout() { token = ""; sessionStorage.removeItem("token"); sessionStorage.removeItem("username"); sessionStorage.removeItem("role"); }
 
 export class ApiError extends Error {
   constructor(message, status) { super(message); this.status = status; }
@@ -14,6 +15,7 @@ function messageFor(status, body, isLogin) {
   if (status === 401) return isLogin ? "Wrong username or password." : "Your session expired. Sign in again.";
   if (status === 403) return "Your account is not allowed to do this.";
   if (status === 404) return "That item was not found.";
+  if (status === 409) return "A run is already waiting or in progress.";
   if (status === 422) return typeof body?.detail === "string" ? body.detail : "Some of the input was not valid. Check it and try again.";
   if (status === 426) return "This server only accepts HTTPS connections.";
   if (status === 503) return "The database is not reachable. Start MongoDB and try again.";
@@ -43,6 +45,7 @@ export async function login(username, password) {
   token = r.token;
   sessionStorage.setItem("token", token);
   sessionStorage.setItem("username", r.username);
+  sessionStorage.setItem("role", r.role || "");
   return r;
 }
 export const getSessions = (offset = 0, limit = 50) => request(`/api/sessions?offset=${offset}&limit=${limit}`);
@@ -51,3 +54,6 @@ export const askAssistant = (id, question) =>
   request(`/api/sessions/${encodeURIComponent(id)}/chat`, { method: "POST", body: JSON.stringify({ question }) });
 export const getUser = (id) => request(`/api/users/${encodeURIComponent(id)}`);
 export const getRun = () => request("/api/run/latest");
+export const getRunStatus = () => request("/api/run/status");
+export const getRunDatasets = () => request("/api/run/datasets");
+export const startRun = (dataset, retrain) => request("/api/run", { method: "POST", body: JSON.stringify({ dataset, retrain }) });

@@ -50,6 +50,13 @@ def require_analyst(user: dict = Depends(current_user)) -> dict:
     return user
 
 
+def require_admin(user: dict = Depends(current_user)) -> dict:
+    """Only an administrator may ask for a batch run. Analysts stay read-only."""
+    if user["role"] != "admin":
+        raise HTTPException(403, "Not allowed")
+    return user
+
+
 def valid_session_id(session_id: str) -> str:
     if not SESSION_ID.match(session_id):
         raise HTTPException(422, "Invalid session id")

@@ -10,10 +10,10 @@ import logging
 import math
 from datetime import datetime, timezone
 
-from . import assistant, config
+from . import assistant, config, jobs
 from .db import get_db
 from .features import BASE_LABELS, BASE_METRICS
-from .security import (check_login_throttle, check_password, log_access, make_token, require_analyst,
+from .security import (check_login_throttle, check_password, log_access, make_token, require_admin, require_analyst,
                        valid_session_id, valid_user_id)
 
 app = FastAPI(title="Insider Threat Detection API", docs_url="/docs")
@@ -66,6 +66,12 @@ class LoginIn(BaseModel):          # strict types: a dict like {"$ne": ""} is re
     password: str = Field(min_length=1, max_length=128)
 
 
+class RunIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    dataset: str = Field(min_length=1, max_length=64, pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")   # a folder NAME, never a path
+    retrain: bool = False
+
+
 class ChatIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
     question: str = Field(min_length=1, max_length=config.MAX_QUESTION_CHARS)
@@ -79,7 +85,7 @@ def login(body: LoginIn, request: Request):
     log_access(request, body.username, "login_ok" if ok else "login_failed")
     if not ok:
         raise HTTPException(401, "Wrong username or password")
-    return {"token": make_token(acc["_id"], acc["role"]), "username": acc["_id"], "expires_minutes": config.JWT_MINUTES}
+    return {"token": make_token(acc["_id"], acc["role"]), "username": acc["_id"], "role": acc["role"], "expires_minutes": config.JWT_MINUTES}
 
 
 @app.get("/api/sessions")
@@ -159,3 +165,29 @@ def latest_run(user: dict = Depends(require_analyst)):
     return {"at": datetime.fromtimestamp(run["at"], timezone.utc).isoformat(), "seconds": run["seconds"],
             "step_seconds": run.get("step_seconds", {}), "sessions": run["sessions"], "flagged": run["flagged"],
             "threshold": round(run["threshold"], 1), "weights": run["weights"], "metrics": run.get("metrics")}
+
+
+@app.get("/api/run/datasets")
+def run_datasets(user: dict = Depends(require_admin)):
+    """Dataset folders under the data root that an administrator can run (folder names only)."""
+    return {"datasets": jobs.list_datasets()}
+
+
+@app.post("/api/run", status_code=202)
+def start_run(body: RunIn, request: Request, user: dict = Depends(require_admin)):
+    """Ask for a batch run. The API only files the request; the worker (python -m itd.worker) performs it."""
+    try:
+        doc = jobs.request_run(get_db("api"), user["username"], body.dataset, body.retrain)
+    except (ValueError, FileNotFoundError):
+        raise HTTPException(404, "Dataset not found")
+    except RuntimeError:
+        raise HTTPException(409, "A run is already waiting or in progress")
+    log_access(request, user["username"], "run_requested", dataset=body.dataset, retrain=body.retrain)
+    return jobs.public(doc, admin=True)
+
+
+@app.get("/api/run/status")
+def run_status(user: dict = Depends(require_analyst)):
+    """The newest run request and how it is going: requested, running, done or failed."""
+    doc = jobs.latest_request(get_db("api"))
+    return {"request": jobs.public(doc, admin=user["role"] == "admin") if doc else None}
