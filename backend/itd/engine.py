@@ -15,6 +15,7 @@ from .db import get_db, get_fs
 from .explain import shap_values, top_baseline_deviations, top_shap
 from .features import FEATURES, session_features
 from .ingest import load_dataset
+from . import rules
 from . import validate
 from .models import dumps, loads, score_models, time_split, train_models
 from .risk import calibrate, combine, evaluate, evaluate_model, fit_risk_engine
@@ -105,6 +106,7 @@ def run(data_dir, retrain=False, report_dir="reports", pseudonymize=None):
     if loaded is None:  # test-set evaluation (never used for tuning: every threshold comes from validation data)
         metrics["test"] = {"risk_engine": {**evaluate(y[te], risk[te], thr), "brier": float(brier_score_loss(y[te], risk[te] / 100))},
                            **{k: evaluate_model(y[te], scores[k][te], risk_cfg["val_thresholds"][k], raw[k][te]) for k in scores}}
+        metrics["test"].update(rules.reference_metrics(feats, y, va, te))      # simple reference methods, thresholds from validation data
         metrics["sizes"] = {"train": len(tr), "validation": len(va), "test": len(te)}
         db.trained_models.update_one({"_id": "current"}, {"$set": {"metrics": metrics}})
     splits = np.empty(len(feats), dtype=object)

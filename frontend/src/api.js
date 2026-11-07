@@ -57,3 +57,19 @@ export const getRun = () => request("/api/run/latest");
 export const getRunStatus = () => request("/api/run/status");
 export const getRunDatasets = () => request("/api/run/datasets");
 export const startRun = (dataset, retrain) => request("/api/run", { method: "POST", body: JSON.stringify({ dataset, retrain }) });
+export async function downloadRunReport() {
+  let res;
+  try {
+    res = await fetch(BASE + "/api/run/report", { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+  } catch {
+    throw new ApiError("Cannot reach the server. Check that the API is running.", 0);
+  }
+  if (res.status === 401 && token) { logout(); window.dispatchEvent(new Event("auth-expired")); }
+  if (!res.ok) throw new ApiError(messageFor(res.status, null, false), res.status);
+  const url = URL.createObjectURL(await res.blob());
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "run-report.html";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}

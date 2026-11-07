@@ -11,6 +11,7 @@ Every endpoint except login needs the header `Authorization: Bearer <token>`.
 | `GET /api/sessions/{session_id}` | score, model scores, top 3 SHAP behaviors, top 3 baseline differences, evidence ids | 200 | 401, 403, 404 not found, 422 bad id format |
 | `GET /api/users/{user_id}?limit=500` | one user's sessions over time (oldest first), summary counts, and their normal behavior (10 baseline metrics with mean and standard deviation) | 200 `{user, threshold, summary, baseline[], sessions[]}` | 401, 403, 404 unknown user, 422 bad id format |
 | `GET /api/run/latest` | when the batch engine last ran, run time per step, flag threshold, model weights, calibration, test results per model (precision, recall, F1, PR-AUC, Brier score, validation threshold) | 200 | 401, 403, 404 no run yet |
+| `GET /api/run/report` | a printable HTML report of the newest batch run: summary, test results with the simple reference methods, and the 10 highest-risk flagged sessions with their explanations; sent as a download and never cached; each download is logged | 200 HTML (`run-report.html`) | 401, 404 no run recorded yet |
 | `GET /api/run/status` | the newest run request and how it is going (requested, running, done or failed) with dataset, who asked, times and the reason when it failed; an admin also gets the log text | 200 `{request}` (`request` is null when nothing was requested) | 401 |
 | `GET /api/run/datasets` | admin only: dataset folder names under the data folder (`ITD_DATA_ROOT`, default `data`) that contain logon.csv | 200 `{datasets[]}` | 401, 403 not admin |
 | `POST /api/run` body `{"dataset": "cert_synthetic", "retrain": false}` | admin only: files a run request; the worker (`python -m itd.worker`) performs it | 202 request object | 401, 403 not admin, 404 dataset not found, 409 a run is already waiting or in progress, 422 bad input (a folder name only, never a path) |
@@ -18,7 +19,7 @@ Every endpoint except login needs the header `Authorization: Bearer <token>`.
 
 ## Security on every request
 HTTPS (when enabled), token check, analyst role check, strict input validation, and an entry in the access log
-(logins, sessions viewed, users viewed, assistant questions, run requests). The API writes only the access log and run requests; the worker writes the progress of a run.
+(logins, sessions viewed, users viewed, assistant questions, run requests, report downloads). The API writes only the access log and run requests; the worker writes the progress of a run.
 
 ## Try it
 ```powershell

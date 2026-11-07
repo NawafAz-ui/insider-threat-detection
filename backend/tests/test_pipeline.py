@@ -428,6 +428,9 @@ def test_stored_models_keep_calibrators_and_validation_thresholds(client):
     doc = get_db().trained_models.find_one({"_id": "current"})
     assert set(doc["risk"]["calibrators"]) == {"lr", "xgb", "iforest"}
     for k, m in doc["metrics"]["test"].items():
+        if k in ("rule_after_hours", "rule_hand_written", "rule_deviation", "no_skill"):      # simple reference methods, not models (itd/rules.py)
+            assert "validation_threshold" not in m and 0 <= m["f1"] <= 1
+            continue
         if k == "risk_engine":
             assert 0 <= m["brier"] <= 1
             continue
