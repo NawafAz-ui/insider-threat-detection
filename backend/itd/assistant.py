@@ -16,6 +16,55 @@ SYSTEM = (
 NO_SUPPORT = "The stored evidence for this session does not support an answer to that question."
 
 
+# Guard: what this assistant must not answer. It runs before any answer, with or without a language model, so a guilt
+# question, an attempt to change its rules or a request about other sessions always gets the same plain refusal.
+# Step 1 names the known cases with a specific reason. Step 2 fails closed: a question that is neither a general
+# "why / score / normal" question nor about a word in the stored reasons is refused too.
+GUARDS = [
+    (re.compile(r"\b(?:thief|thieves|guilty|innocent|steal\w*|stole\w*|crimin\w*|crime|fraud\w*|spy|spying|malicious|sabotage\w*|"
+                r"blame|punish\w*|arrest\w*|intent\w*|motive\w*|liar|lying|on purpose|deliberate\w*|predict\w*|future|"
+                r"(?:do|did|happen|repeat)\s+(?:it|this)?\s*again|next (?:time|week|month))\b", re.I),
+     "The stored evidence cannot show whether anyone did something wrong or what will happen next. It only shows how this "
+     "session differs from normal. A flag is a lead for a person to check, not proof."),
+    (re.compile(r"\b(?:who is|who was|real name|full name|(?:user|employee|person)'?s name|his name|her name|their name|"
+                r"which employee|which person)\b", re.I),
+     "Names are not part of the evidence this assistant sees."),
+    (re.compile(r"\b(?:other|another|different|all|every|any)\s+(?:flagged\s+)?(?:sessions?|users?|employees?|people|persons?|"
+                r"accounts?|computers?|pcs?)\b|\bwhich (?:user|users|employee|employees|person|people)\b|\bwho else\b|"
+                r"\bhighest risk (?:user|person|employee)\b|\b(?:past|previous|earlier|last|prior)\s+(?:sessions?|activity|"
+                r"behaviou?rs?|logons?)\b|\bhistory\b|\b[US]\d{4,}\b", re.I),
+     "This assistant only sees the stored evidence of this one session. It cannot answer questions about other sessions or users."),
+    (re.compile(r"\b(?:ignore|disregard|forget)\b.*\b(?:rules?|instructions?|previous|above|prompt)\b|\bsystem prompt\b|"
+                r"\bpretend\b|\bact as\b|\bjailbreak\b|\boverride\b|\b(?:admin|developer) mode\b|\breveal\b|"
+                r"\braw\b|\bjson\b|\bpassword\b|\bapi key\b|"
+                r"^\s*(?:please\s+)?(?:set|change|raise|lower|reset|delete|remove|edit|update)\b", re.I),
+     "This assistant is read-only. It explains the stored evidence of this session and cannot change scores, delete anything "
+     "or show other data."),
+]
+NOT_ABOUT = ("It can explain why this session was flagged, what its score means and how it differs from this user's normal.")
+GENERIC = re.compile(r"\b(?:why|reasons?|explain|flag(?:ged)?|scor\w*|risk|threshold|unusual|usual|normal|different|summary|"
+                     r"summari[sz]e|happened|suspicious|concern|means?)\b", re.I)
+
+
+def _decline_reason(question: str, doc: dict = None):
+    """The reason text when the question must be refused, else None."""
+    for pattern, reason in GUARDS:
+        if pattern.search(question):
+            return reason
+    if doc is not None and not _about_the_evidence(question, doc):
+        return NOT_ABOUT
+    return None
+
+
+def _about_the_evidence(question: str, doc: dict) -> bool:
+    """True for a general 'why / score / normal' question or one that shares a word with a stored reason."""
+    if GENERIC.search(question):
+        return True
+    words = {SYNONYMS.get(w, w) for w in re.findall(r"[a-z]{3,}", question.lower())} - STOP
+    texts = [t.lower() for k, (t, _) in _plain_items(doc).items() if k != "R"]
+    return any(w in t for w in words for t in texts)
+
+
 def build_evidence(doc: dict) -> dict:
     """Derived evidence only: score, top-3 SHAP, baseline deviations. No user, PC or raw logs."""
     ev = {"R": f"Risk score {doc['risk_score']} out of 100 (flag threshold applies to this score)."}
@@ -154,6 +203,10 @@ def _call_llm(evidence: dict, question: str) -> dict:
 
 def answer(doc: dict, question: str) -> dict:
     evidence = build_evidence(doc)
+    reason = _decline_reason(question, doc)
+    if reason:                              # a fixed refusal: no model call and no summary that could be read as an answer
+        return {"answer": f"{NO_SUPPORT} {reason}", "fields_used": [], "mode": "template", "declined": True,
+                "evidence": evidence}
     if config.LLM_API_KEY:
         try:
             return _call_llm(evidence, question)

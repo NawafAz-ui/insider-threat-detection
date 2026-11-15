@@ -521,7 +521,7 @@ def test_hosted_statements_are_checked_one_by_one(monkeypatch):
 
 def test_hosted_answer_says_so_when_no_statement_is_supported(monkeypatch):
     for reply in ('{"statements": []}', '{"statements": [{"text": "Score 99.", "evidence": ["R"]}]}'):
-        res = _hosted_reply(monkeypatch, reply).answer(_DOC, "Is this user a thief?")
+        res = _hosted_reply(monkeypatch, reply).answer(_DOC, "Why was this flagged?")
         assert res["answer"].startswith("The stored evidence for this session does not support") and res["fields_used"] == []
 
 
