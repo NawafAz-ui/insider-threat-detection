@@ -70,7 +70,7 @@ def valid_user_id(user_id: str) -> str:
 
 
 def log_access(request: Request, username: str, action: str, **extra):
-    """Access logging: login, session viewed, assistant question (the only write the API makes)."""
+    """Access logging: login, session viewed, assistant question (besides run requests, the only write the API makes)."""
     get_db("api").access_log.insert_one({"at": time.time(), "user": username, "action": action,
                                     "ip": request.client.host if request.client else None, **extra})
 

@@ -5,6 +5,8 @@ Uses the engine database account (MONGO_URI_ENGINE), so the API account never ne
 import argparse
 import time
 
+from pymongo.errors import PyMongoError
+
 from . import jobs
 from .db import get_db
 
@@ -19,7 +21,12 @@ def serve(poll=3.0, once=False, runner=None):
         print(f"Marked {stale} unfinished request(s) from an earlier worker as failed.")
     print(f"Worker ready (data root: {jobs.config.DATA_ROOT}). Waiting for run requests ...")
     while True:
-        doc = jobs.claim_next(db)
+        try:
+            doc = jobs.claim_next(db)
+        except PyMongoError as e:                               # database down: wait and try again instead of stopping
+            print(f"Database not reachable ({type(e).__name__}). Trying again in {poll} s.")
+            time.sleep(poll)
+            continue
         if doc:
             print(f"Run requested by {doc['requested_by']}: dataset '{doc['dataset']}', retrain={doc['retrain']}")
             print("Finished:", jobs.process(db, doc, runner))

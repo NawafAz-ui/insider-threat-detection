@@ -28,7 +28,8 @@ PSEUDONYM_KEY = os.getenv("PSEUDONYM_KEY", "change-me-pseudonym-key")
 # Session rules (proposal, Preprocessing)
 SESSION_MAX_HOURS = 12
 AFTER_HOURS_START, AFTER_HOURS_END = 19, 7   # after 19:00 or before 07:00
-SPLIT = (0.70, 0.15, 0.15)                   # time-ordered train / validation / test
+SPLIT = (0.80, 0.20)                         # time-ordered train / test (owner's choice: no validation part)
+FOLDS = 5                                    # cross-validation inside the training part sets calibration, weights and thresholds
 RANDOM_STATE = 42
 
 # Batch runs started from the dashboard: dataset folders are looked up by NAME under this folder (itd/jobs.py)

@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import average_precision_score, brier_score_loss, precision_recall_curve, precision_score, recall_score, f1_score
 
-CALIBRATION_C = 10.0     # mild regularization: the validation part has few malicious sessions, so the curve is kept gentle
+CALIBRATION_C = 10.0     # mild regularization: the tuning scores hold few malicious sessions, so the curve is kept gentle
 
 
 def best_f1(y, s):
@@ -15,7 +15,7 @@ def best_f1(y, s):
 
 
 def fit_calibrators(val_scores: dict, y_val):
-    """Platt scaling, one curve per model: p = 1 / (1 + exp(-(a * score + b))). Fitted on validation data only."""
+    """Platt scaling, one curve per model: p = 1 / (1 + exp(-(a * score + b))). Fitted on the tuning scores only."""
     out = {}
     for k, s in val_scores.items():
         m = LogisticRegression(C=CALIBRATION_C, max_iter=1000).fit(np.asarray(s, float).reshape(-1, 1), y_val)
@@ -28,9 +28,10 @@ def calibrate(scores: dict, calibrators: dict):
 
 
 def fit_risk_engine(val_scores: dict, y_val):
-    """Calibrate each model on validation data, weight it by its validation F1 and set the flag threshold at the
-    best F1 of the combined score. Nothing here sees the test labels. (The engine refuses a validation part without
-    a malicious session, so the F1 values cannot all be zero.)"""
+    """Calibrate each model on the tuning scores (out-of-fold scores of the training part), weight it by its tuning F1
+    and set the flag threshold at the best F1 of the combined score. Nothing here sees the test labels. The keys keep
+    their old "val" names so saved runs still load. (The engine refuses a training part with fewer than two malicious
+    sessions, so the F1 values cannot all be zero.)"""
     cal = fit_calibrators(val_scores, y_val)
     p = calibrate(val_scores, cal)
     best = {k: best_f1(y_val, v) for k, v in p.items()}

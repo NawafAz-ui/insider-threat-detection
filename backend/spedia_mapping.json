@@ -1,0 +1,27 @@
+{
+  "_comment": "Checked against logs_SPEDIA_annotated_en.csv (Zenodo record 15525713, md5 e01e0baaf3b523a0b493fc9c52af2b1c) on 15 November 2026. Its login records come from the Linux PAM log of the exercise servers and rarely frame the other events, so sessions are built from activity gaps (session_gap_minutes). Commands and failed logins have no CERT file and are left out.",
+  "time_column": "Timestamp",
+  "time_format": "%Y-%m-%d %H:%M:%S.%f",
+  "user_column": "User",
+  "host_column": "Agent_name",
+  "event_type_column": "Action",
+  "type_exact": true,
+  "type_map": {
+    "logon": [],
+    "logoff": [],
+    "device": ["Connect", "Disconnect"],
+    "email": ["Email sent"],
+    "file": ["File accessed", "File modified", "File added", "File deleted"],
+    "http": ["URL accedida"]
+  },
+  "device_activity_column": "Action",
+  "url_column": "Url",
+  "to_column": "To",
+  "size_column": "Size",
+  "attachments_column": "Attachments",
+  "filename_column": ["Filename", "Path"],
+  "label_column": "Anomaly",
+  "malicious_values": ["1"],
+  "drop_missing_user": true,
+  "session_gap_minutes": 30
+}

@@ -1,5 +1,5 @@
 """Matched experiments A to D of the methodology (docs/EVALUATION_CRITERIA.md) on generated CERT-layout data.
-No database is used. Every seed makes a new data set; every threshold is chosen on the validation part and the
+No database is used. Every seed makes a new data set; every threshold is chosen by cross-validation on the training part and the
 results are read on the time-ordered test part. Generated data is easier than real logs: not a research finding.
    python scripts/run_experiments.py [--seeds 5] [--users 120 --days 90 --insiders 12] [--report reports]
 A: single models.  B: feature groups.  C: best single model vs equal weights vs F1 weights.  D: raw vs calibrated."""
@@ -20,7 +20,7 @@ from sklearn.metrics import brier_score_loss
 from itd.baselines import add_deviations
 from itd.features import DEV_FEATURES, FEATURES, SESSION_FEATURES, session_features
 from itd.ingest import load_dataset
-from itd.models import score_models, time_split, train_models
+from itd.models import oof_scores, score_models, time_split, train_models
 from itd.risk import best_f1, calibrate, combine, evaluate, fit_risk_engine
 from itd.rules import RULE_NAMES, reference_metrics
 
@@ -39,15 +39,15 @@ def make_frame(seed, args, folder):
 
 def split_scores(f, cols):
     X, y = f[cols].to_numpy(float), f["label"].to_numpy(int)
-    tr, va, te = time_split(len(f))
-    if min(y[tr].sum(), y[va].sum(), y[te].sum()) == 0:
+    tr, te = time_split(len(f))
+    if y[tr].sum() < 2 or y[te].sum() == 0:
         return None
     models, extra = train_models(X[tr], y[tr])
-    return score_models(models, extra, X[va]), y[va], score_models(models, extra, X[te]), y[te]
+    return oof_scores(X[tr], y[tr]), y[tr], score_models(models, extra, X[te]), y[te]
 
 
-def at_validation_threshold(val_risk, y_val, test_risk, y_test):
-    """Test metrics at the threshold that is best on validation data (risk values on a 0 to 100 scale)."""
+def at_tuned_threshold(val_risk, y_val, test_risk, y_test):
+    """Test metrics at the threshold that is best on the tuning scores (risk values on a 0 to 100 scale)."""
     m = evaluate(y_test, test_risk, best_f1(y_val, val_risk)[1])
     benign = len(y_test) - int(y_test.sum())
     top = np.argsort(-test_risk, kind="stable")[:TOP_K]
@@ -57,7 +57,7 @@ def at_validation_threshold(val_risk, y_val, test_risk, y_test):
 
 
 def ensemble(pv, yv, pt, yt, weights):
-    return at_validation_threshold(combine(pv, weights), yv, combine(pt, weights), yt)
+    return at_tuned_threshold(combine(pv, weights), yv, combine(pt, weights), yt)
 
 
 def one_seed(f):
@@ -73,17 +73,18 @@ def one_seed(f):
         if cols is not FEATURES:
             continue
         for k in pv:                                                         # A: each model, calibrated
-            out["A"][NAMES[k]] = at_validation_threshold(pv[k] * 100, yv, pt[k] * 100, yt)
+            out["A"][NAMES[k]] = at_tuned_threshold(pv[k] * 100, yv, pt[k] * 100, yt)
         best = max(cfg["val_f1"], key=cfg["val_f1"].get)                      # C
-        out["C"][f"best single model ({NAMES[best]})"] = ensemble(pv, yv, pt, yt, {k: float(k == best) for k in pv})
+        # one key for every seed: the best model can differ between seeds, and summarize() needs the same keys
+        out["C"]["best single model"] = {**ensemble(pv, yv, pt, yt, {k: float(k == best) for k in pv}), "model": NAMES[best]}
         out["C"]["equal weights"] = ensemble(pv, yv, pt, yt, {k: 1 / len(pv) for k in pv})
-        out["C"]["weights from validation F1"] = out["B"][label]
+        out["C"]["weights from tuning F1"] = out["B"][label]
         raw_f1 = {k: best_f1(yv, v)[0] for k, v in raw_v.items()}            # D: same weights rule, raw scores
         out["D"]["raw scores"] = ensemble(raw_v, yv, raw_t, yt, {k: v / sum(raw_f1.values()) for k, v in raw_f1.items()})
         out["D"]["calibrated scores"] = out["B"][label]
-    tr, va, te = time_split(len(f))                                          # F: simple reference methods
+    tr, te = time_split(len(f))                                              # F: simple reference methods
     out["F"]["combined risk score (all 39 features)"] = out["B"]["plus recency (all 39)"]
-    for key, m in reference_metrics(f, f["label"].to_numpy(int), va, te).items():
+    for key, m in reference_metrics(f, f["label"].to_numpy(int), tr, te).items():
         out["F"][RULE_NAMES[key]] = m
     return out
 
@@ -119,7 +120,7 @@ if __name__ == "__main__":
     table = summarize(runs)
     os.makedirs(args.report, exist_ok=True)
     with open(os.path.join(args.report, "experiments.json"), "w") as fh:
-        json.dump({"note": "Generated data only. Threshold from validation data; metrics on the test part. mean with min and max over seeds.",
+        json.dump({"note": "Generated data only. Threshold from cross-validation on the training part; metrics on the test part. mean with min and max over seeds.",
                    "seeds": used, "data": vars(args), "summary": table, "per_seed": runs}, fh, indent=2)
     print(f"{len(runs)} seeds {used}; {args.users} users, {args.days} days, {args.insiders} insiders. mean (min to max) on the test part\n")
     for ex, title in (("A", "A single models"), ("B", "B feature groups (combined score)"), ("C", "C combination rule"), ("D", "D raw vs calibrated (combined score)"), ("F", "F simple reference methods")):

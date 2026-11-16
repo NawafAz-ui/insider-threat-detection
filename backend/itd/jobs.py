@@ -14,6 +14,7 @@ from bson import ObjectId
 from pymongo import ReturnDocument
 
 from . import config
+from .ingest import data_file
 
 NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$")     # a folder NAME under the data root, never a path
 ACTIVE = ["requested", "running"]
@@ -26,7 +27,7 @@ def dataset_path(name):
     if not isinstance(name, str) or not NAME.match(name):
         raise ValueError("Invalid dataset name")
     path = os.path.join(config.DATA_ROOT, name)
-    if not os.path.isfile(os.path.join(path, "logon.csv")):
+    if not os.path.isfile(data_file(path, "logon")):
         raise FileNotFoundError(f"Dataset '{name}' not found")
     return path
 
@@ -35,16 +36,19 @@ def list_datasets():
     root = config.DATA_ROOT
     if not os.path.isdir(root):
         return []
-    return sorted(n for n in os.listdir(root) if NAME.match(n) and os.path.isfile(os.path.join(root, n, "logon.csv")))
+    return sorted(n for n in os.listdir(root) if NAME.match(n) and os.path.isfile(data_file(os.path.join(root, n), "logon")))
 
 
 # ---- API side (insert and read only) ---------------------------------------------------------------------
-def request_run(db, username, dataset, retrain):
+def request_run(db, username, dataset, retrain, log=None):
     """Insert a run request. Raises ValueError/FileNotFoundError (bad dataset) or RuntimeError (one is already active).
-    The active check is best effort: two requests at the same instant may both queue, and the worker runs them one by one."""
+    The active check is best effort: two requests at the same instant may both queue, and the worker runs them one by one.
+    log, if given, writes the access-log entry after the checks and before the insert, so no run is stored without one."""
     dataset_path(dataset)
     if db.run_requests.find_one({"status": {"$in": ACTIVE}}):
         raise RuntimeError("A run is already waiting or in progress")
+    if log:
+        log()
     doc = {"_id": ObjectId(), "status": "requested", "dataset": dataset, "retrain": bool(retrain),
            "requested_by": username, "requested_at": time.time()}
     db.run_requests.insert_one(doc)

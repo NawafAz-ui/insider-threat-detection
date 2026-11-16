@@ -39,8 +39,14 @@ def iter_chunks(path, cols, pseudo=None):
         yield chunk
 
 
+def data_file(folder, name):
+    """Path of name.csv, or of name.csv.gz when only the compressed copy exists (pandas reads both)."""
+    path = os.path.join(folder, f"{name}.csv")
+    return path + ".gz" if not os.path.exists(path) and os.path.exists(path + ".gz") else path
+
+
 def check_folder(folder):
-    missing = [f"{n}.csv" for n in FILES if not os.path.exists(os.path.join(folder, f"{n}.csv"))]
+    missing = [f"{n}.csv" for n in FILES if not os.path.exists(data_file(folder, n))]
     if missing:
         raise FileNotFoundError(f"Missing in {folder}: {', '.join(missing)}. See docs/CSV_LAYOUT.md for the expected layout.")
 
@@ -51,10 +57,10 @@ def load_dataset(folder, pseudonymize=None, log=print):
     check_folder(folder)
     pseudonymize = config.PSEUDONYMIZE if pseudonymize is None else pseudonymize
     pseudo = Pseudonymizer(config.PSEUDONYM_KEY) if pseudonymize else None
-    ans = os.path.join(folder, "answers.csv")
+    ans = data_file(folder, "answers")
     bad = set(pd.read_csv(ans, dtype=str)["id"]) if os.path.exists(ans) else set()
 
-    logon = pd.concat(list(iter_chunks(os.path.join(folder, "logon.csv"), FILES["logon"], pseudo)), ignore_index=True)
+    logon = pd.concat(list(iter_chunks(data_file(folder, "logon"), FILES["logon"], pseudo)), ignore_index=True)
     sessions = build_sessions(logon)
     bad_sids = set(assign_events(sessions, logon).query("id in @bad")["sid"]) if bad else set()
     log(f"    logon: {len(logon):,} events -> {len(sessions):,} sessions")
@@ -63,7 +69,7 @@ def load_dataset(folder, pseudonymize=None, log=print):
     agg = Aggregator()
     for kind in ("device", "file", "email", "http"):
         n = 0
-        for chunk in iter_chunks(os.path.join(folder, f"{kind}.csv"), FILES[kind], pseudo):
+        for chunk in iter_chunks(data_file(folder, kind), FILES[kind], pseudo):
             m = assign_events(sessions, chunk)
             if bad:
                 bad_sids.update(m.loc[m["id"].isin(bad), "sid"])

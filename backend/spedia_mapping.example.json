@@ -13,6 +13,7 @@
     "file": ["file"],
     "http": ["http", "web"]
   },
+  "device_activity_column": "event_type",
   "url_column": "url",
   "to_column": "recipient",
   "size_column": "size",

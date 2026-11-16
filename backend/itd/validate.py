@@ -9,7 +9,7 @@ import sys
 import numpy as np
 import pandas as pd
 
-from .ingest import CHUNK, FILES
+from .ingest import CHUNK, FILES, data_file
 
 DATE_FORMAT = "%m/%d/%Y %H:%M:%S"
 ACTIVITIES = {"logon": {"Logon", "Logoff"}, "device": {"Connect", "Disconnect"}}
@@ -71,13 +71,13 @@ def _check_file(path, kind, chunk):
 def validate_folder(folder, chunk=CHUNK):
     """Return a report dict: status ('ok', 'warnings' or 'failed'), issues, row counts."""
     issues, files, hashes = [], {}, {}
-    missing = [f"{n}.csv" for n in FILES if not os.path.exists(os.path.join(folder, f"{n}.csv"))]
+    missing = [f"{n}.csv" for n in FILES if not os.path.exists(data_file(folder, n))]
     if missing:
         issues.append({**_issue("V1", ", ".join(missing), len(missing)), "message": f"{RULES['V1'][1]}: {', '.join(missing)}"})
         return _finish(folder, issues, files)
 
     for kind in FILES:
-        path = os.path.join(folder, f"{kind}.csv")
+        path = data_file(folder, kind)
         header = list(pd.read_csv(path, nrows=0, dtype=str).columns)
         absent = [c for c in FILES[kind] if c not in header]
         if absent:
@@ -94,7 +94,7 @@ def validate_folder(folder, chunk=CHUNK):
         dup_all = len(allh) - len(np.unique(allh))
         if dup_all:
             issues.append({**_issue("V5", "all event files", dup_all), "message": f"{RULES['V5'][1]} ({dup_inside} inside one file, {dup_all - dup_inside} across files)"})
-        ans = os.path.join(folder, "answers.csv")
+        ans = data_file(folder, "answers")
         if not os.path.exists(ans):
             issues.append(_issue("V10", "answers.csv", 0))
         else:

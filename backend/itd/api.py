@@ -97,7 +97,7 @@ def session_list(limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge
     run = db.runs.find_one(sort=[("at", -1)]) or {}
     return {"threshold": round(run.get("threshold", 0.0), 1), "total": db.results.count_documents({"flagged": True}),
             "scored": run.get("sessions", 0), "high": db.results.count_documents({"flagged": True, "risk_score": {"$gte": 80}}),
-            "sessions": [{"session_id": d["session_id"], "user": d["user"], "start": d["start"].isoformat(),
+            "sessions": [{"session_id": d["session_id"], "user": d["user"], "pc": d["pc"], "start": d["start"].isoformat(),
                           "end": d["end"].isoformat(), "risk_score": d["risk_score"]} for d in cur]}
 
 
@@ -112,7 +112,7 @@ def _get_doc(session_id: str):
 def session_detail(session_id: str, request: Request, user: dict = Depends(require_analyst)):
     d = _get_doc(session_id)
     log_access(request, user["username"], "session_viewed", session_id=session_id)
-    return {"session_id": d["session_id"], "user": d["user"], "start": d["start"].isoformat(), "end": d["end"].isoformat(),
+    return {"session_id": d["session_id"], "user": d["user"], "pc": d["pc"], "start": d["start"].isoformat(), "end": d["end"].isoformat(),
             "risk_score": d["risk_score"], "flagged": d["flagged"], "model_scores": d["model_scores"],
             "top_shap": d["top_shap"], "baseline_deviations": d["baseline_deviations"],
             "threshold": round((get_db("api").runs.find_one(sort=[("at", -1)]) or {}).get("threshold", 0.0), 1),
@@ -137,9 +137,9 @@ def user_history(user_id: str, request: Request, limit: int = Query(500, ge=1, l
     total = db.results.count_documents({"user": uid})
     if not total:
         raise HTTPException(404, "User not found")
-    cur = db.results.find({"user": uid}, {"session_id": 1, "start": 1, "end": 1, "risk_score": 1, "flagged": 1}) \
+    cur = db.results.find({"user": uid}, {"session_id": 1, "pc": 1, "start": 1, "end": 1, "risk_score": 1, "flagged": 1}) \
         .sort("start", -1).limit(limit)
-    sessions = [{"session_id": d["session_id"], "start": d["start"].isoformat(), "end": d["end"].isoformat(),
+    sessions = [{"session_id": d["session_id"], "pc": d["pc"], "start": d["start"].isoformat(), "end": d["end"].isoformat(),
                  "risk_score": d["risk_score"], "flagged": d["flagged"]} for d in reversed(list(cur))]
     top = db.results.find_one({"user": uid}, {"risk_score": 1}, sort=[("risk_score", -1)])
     base = db.user_baselines.find_one({"_id": uid})
@@ -177,12 +177,12 @@ def run_datasets(user: dict = Depends(require_admin)):
 def start_run(body: RunIn, request: Request, user: dict = Depends(require_admin)):
     """Ask for a batch run. The API only files the request; the worker (python -m itd.worker) performs it."""
     try:
-        doc = jobs.request_run(get_db("api"), user["username"], body.dataset, body.retrain)
+        doc = jobs.request_run(get_db("api"), user["username"], body.dataset, body.retrain,
+                               log=lambda: log_access(request, user["username"], "run_requested", dataset=body.dataset, retrain=body.retrain))
     except (ValueError, FileNotFoundError):
         raise HTTPException(404, "Dataset not found")
     except RuntimeError:
         raise HTTPException(409, "A run is already waiting or in progress")
-    log_access(request, user["username"], "run_requested", dataset=body.dataset, retrain=body.retrain)
     return jobs.public(doc, admin=True)
 
 

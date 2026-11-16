@@ -10,7 +10,8 @@ frontend/dist/
 .env
 certs/
 # Data and outputs (large, regenerate with the scripts)
-backend/data/
+backend/data/*
+!backend/data/spedia_cert/
 backend/reports/
 backend/backups/
 mongo-data/
@@ -22,3 +23,4 @@ Thumbs.db
 .idea/
 
 .pytest_tmp/
+~$*

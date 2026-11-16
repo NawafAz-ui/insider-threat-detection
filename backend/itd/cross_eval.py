@@ -7,7 +7,7 @@ import os
 from .baselines import add_deviations
 from .features import FEATURES, session_features
 from .ingest import load_dataset
-from .models import score_models, time_split, train_models
+from .models import oof_scores, score_models, time_split, train_models
 from .risk import calibrate, combine, evaluate, evaluate_model, fit_risk_engine
 
 
@@ -23,13 +23,13 @@ def run(train_dir, test_dir, report_dir="reports"):
     dropped = [f for f in FEATURES if f not in shared]
     print(f"Shared features used: {len(shared)} of {len(FEATURES)}. Dropped (constant in one dataset): {dropped}")
     Xa, ya = a[shared].to_numpy(float), a["label"].to_numpy(int)
-    tr, va, te = time_split(len(a))
+    tr, te = time_split(len(a))
     models, extra = train_models(Xa[tr], ya[tr])
-    cfg = fit_risk_engine(score_models(models, extra, Xa[va]), ya[va])
+    cfg = fit_risk_engine(oof_scores(Xa[tr], ya[tr]), ya[tr])
 
     def evaluate_on(X, y):
         raw = score_models(models, extra, X)
-        sc = calibrate(raw, cfg["calibrators"])             # everything frozen on the training dataset's validation part
+        sc = calibrate(raw, cfg["calibrators"])             # everything frozen on the training dataset's training part
         r = combine(sc, cfg["weights"])
         return {"sessions": int(len(y)), "malicious_share": float(y.mean()),
                 "risk_engine": evaluate(y, r, cfg["threshold"]),

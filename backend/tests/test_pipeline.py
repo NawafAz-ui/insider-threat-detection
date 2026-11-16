@@ -109,9 +109,21 @@ def test_sessionization_rules():
     assert len(s) == 5
     assert s.loc[0, "logoff_missing"] == 0 and s.loc[1, "logoff_missing"] == 1
     assert s.loc[1, "end"] == d("2010-01-05 11:00")
-    assert (s.loc[3, "end"] - s.loc[3, "start"]) == pd.Timedelta(hours=12) or s.loc[3, "end"] <= d("2010-01-06 22:00")
+    assert s.loc[3, "end"] == d("2010-01-06 21:00") and s.loc[3, "logoff_missing"] == 1   # 12 h cap, before the 22:00 logon
     assert s.loc[4, "end"] == d("2010-01-07 01:00")
 
+
+def test_events_at_session_edges():
+    import pandas as pd
+    from itd.sessionize import assign_events, build_sessions
+    d = pd.Timestamp
+    s = build_sessions(pd.DataFrame([("u", "pc", d("2010-01-04 09:00"), "Logon"), ("u", "pc", d("2010-01-04 17:00"), "Logoff")],
+                                    columns=["user", "pc", "time", "activity"]))
+    ev = pd.DataFrame({"id": list("abcdef"), "user": ["u", "u", "u", "u", "u", "v"], "pc": ["pc", "pc", "pc", "pc", "pc2", "pc"],
+                       "time": [d("2010-01-04 08:59"), d("2010-01-04 09:00"), d("2010-01-04 17:00"), d("2010-01-04 17:01"),
+                                d("2010-01-04 12:00"), d("2010-01-04 12:00")]})
+    kept = set(assign_events(s, ev)["id"])
+    assert kept == {"b", "c"}          # the logon and logoff second count, before, after, another PC or another user do not
 
 def test_baseline_uses_only_past_sessions():
     import pandas as pd
@@ -125,6 +137,23 @@ def test_baseline_uses_only_past_sessions():
     out, final = add_deviations(f)
     assert out["dev_n_device_connect"].iloc[-1] > 3 and out["dev_n_device_connect"].iloc[:5].eq(0).all()
     assert final["u"]["n"] == n
+
+
+def test_overlapping_session_is_not_compared_with_an_unfinished_one():
+    import pandas as pd
+    from itd.baselines import add_deviations
+    from itd.features import BASE_METRICS
+    d = pd.Timestamp
+    starts = [d("2010-01-0%d 09:00" % k) for k in range(4, 9)] + [d("2010-01-11 09:00"), d("2010-01-11 10:00"), d("2010-01-12 09:00")]
+    ends = [t + pd.Timedelta(hours=8) for t in starts]
+    f = pd.DataFrame({m: [1.0] * len(starts) for m in BASE_METRICS})
+    f.loc[5, "n_device_connect"] = 9.0                                    # a long session on PC 1 with heavy USB use
+    f["user"], f["start"], f["end"] = "u", starts, ends                   # session 6 starts on PC 2 while session 5 is still open
+    f.index = [f"S{i}" for i in range(len(starts))]
+    out, final = add_deviations(f)
+    assert out["mean_n_device_connect"].iloc[6] == 1.0                    # session 5 is not in the baseline of session 6 (issue 14)
+    assert out["mean_n_device_connect"].iloc[7] > 1.0                     # it is once it has ended
+    assert final["u"]["n"] == len(starts)
 
 
 def test_working_gap_ignores_weekend():
@@ -200,6 +229,7 @@ def test_user_history_endpoint(client):
     d = r.json()
     starts = [x["start"] for x in d["sessions"]]
     assert starts == sorted(starts)                                    # oldest first, ready for a timeline
+    assert first["pc"] and all(x["pc"] for x in d["sessions"])          # the computer tells apart sessions that start together
     assert d["summary"]["sessions"] >= len(d["sessions"]) and d["summary"]["flagged"] >= 1
     assert d["summary"]["highest_risk"] >= first["risk_score"] - 0.1
     assert len(d["baseline"]) == 10 and all({"label", "mean", "std"} <= set(b) for b in d["baseline"])
@@ -539,6 +569,19 @@ def test_missing_log_file_and_wrong_date_format_stop_the_run(tmp_path):
         (tmp_path / f"{name}.csv").write_text("id,date,user,pc,activity,to,size,attachments,filename,url\nE1,2010-01-04 09:00,u,pc,Logon,,,,,\n")
     with pytest.raises(ValueError):                           # dates must be MM/DD/YYYY HH:MM:SS
         load_dataset(str(tmp_path), **quiet)
+
+
+def test_tuning_uses_out_of_fold_scores_of_the_training_part_only():
+    import numpy as np
+    from itd.models import oof_scores, time_split
+    rng = np.random.default_rng(0)
+    X = rng.normal(size=(200, 5))
+    y = (X[:, 0] + rng.normal(scale=.5, size=200) > 1.5).astype(int)
+    tr, te = time_split(len(y))
+    assert len(tr) == 160 and len(te) == 40 and tr[-1] < te[0]                  # two time-ordered parts, no validation part
+    s = oof_scores(X[tr], y[tr])
+    assert set(s) == {"lr", "xgb", "iforest"} and all(len(v) == len(tr) and np.isfinite(v).all() for v in s.values())
+    assert 0 < s["xgb"][y[tr] == 1].mean() < 0.99                               # out-of-fold, so not the in-sample fit
 
 
 def test_login_throttle_last(client):

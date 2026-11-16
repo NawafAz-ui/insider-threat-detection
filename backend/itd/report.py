@@ -82,7 +82,7 @@ def render(run, top, now=None):
             "<h2>1. Run summary</h2><table>",
             f"<tr><th>Sessions scored</th><td>{sessions:,}</td></tr>",
             f"<tr><th>Flagged sessions</th><td>{flagged:,}{share}</td></tr>",
-            f'<tr><th>Flag threshold</th><td>{_f(run.get("threshold"), 1)} out of 100, chosen on validation data</td></tr>',
+            f'<tr><th>Flag threshold</th><td>{_f(run.get("threshold"), 1)} out of 100, chosen by cross-validation on the training part</td></tr>',
             f"<tr><th>Model weights</th><td>{weights}</td></tr>",
             f'<tr><th>Run time</th><td>{_f(run.get("seconds"), 1)} seconds</td></tr>',
             f"<tr><th>Input validation</th><td>{val_text}</td></tr></table>"]
@@ -93,7 +93,7 @@ def render(run, top, now=None):
                     '<th class="n">Average precision</th><th class="n">Brier score</th><th class="n">Threshold</th></tr></thead><tbody>')
         body.append(_metrics_rows(run, test, models))
         if refs:
-            body.append('<tr class="group"><td colspan="7">Simple reference methods (no learning; the threshold is chosen on validation data)</td></tr>')
+            body.append('<tr class="group"><td colspan="7">Simple reference methods (no learning; the threshold is chosen on the training part)</td></tr>')
             body.append(_metrics_rows(run, test, refs))
         body.append("</tbody></table>")
         if refs:
@@ -103,7 +103,7 @@ def render(run, top, now=None):
                         f'{_f(best)}{" and flagging every session reaches " + _f(ns) if ns is not None else ""}.</p>')
         else:
             body.append('<p class="muted">This run was trained before the simple reference methods existed. Train again to add them.</p>')
-        body.append('<p class="muted">Results are on the held-out, time-ordered test part. Every threshold was chosen on validation data. '
+        body.append('<p class="muted">Results are on the held-out, time-ordered test part. Every threshold was chosen on the training part. '
                     "Brier score: lower is better. Threshold: 0 to 100 for the models, in the units of each rule for the rules.</p>")
     else:
         body.append('<p class="muted">This run has no stored test results.</p>')

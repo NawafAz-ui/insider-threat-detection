@@ -1,7 +1,7 @@
-﻿"""Simple reference methods: no learning, only one flag threshold chosen on the validation part.
+﻿"""Simple reference methods: no learning, only one flag threshold chosen on the training part.
 They answer the question "does the model beat a rule an analyst could write by hand?"
 (docs/EVALUATION_CRITERIA.md, comparison F). A rule gives each session a score (higher = more suspicious) and the
-flag threshold is chosen on validation data exactly like for the models, so the test part is never used for tuning."""
+flag threshold is chosen on the training part, as for the models, so the test part is never used for tuning."""
 from .features import DEV_FEATURES
 from .risk import best_f1, evaluate
 
@@ -22,12 +22,12 @@ def rule_scores(feats):
             "rule_deviation": feats[DEV_FEATURES].to_numpy(float).max(axis=1)}
 
 
-def reference_metrics(feats, y, va, te):
-    """Test-part metrics of the reference methods. va and te are the index arrays of the validation and test parts."""
+def reference_metrics(feats, y, tune, te):
+    """Test-part metrics of the reference methods. tune and te are the index arrays of the tuning (training) and test parts."""
     out = {}
     benign = len(te) - int(y[te].sum())
     for key, s in rule_scores(feats).items():
-        thr = best_f1(y[va], s[va])[1]                              # chosen on validation data only
+        thr = best_f1(y[tune], s[tune])[1]                          # chosen on the tuning part only
         m = evaluate(y[te], s[te], thr)
         out[key] = {**m, "threshold": float(thr), "fp_per_1000_benign": 1000 * m["flagged"] * (1 - m["precision"]) / benign,
                     "alerts_per_1000": 1000 * m["flagged"] / len(te)}

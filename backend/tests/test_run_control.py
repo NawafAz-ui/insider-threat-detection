@@ -70,6 +70,18 @@ def test_request_is_stored_logged_and_visible_to_analysts(env):
     assert seen["status"] == "requested" and "log" not in seen
 
 
+def test_no_run_is_stored_when_its_log_entry_cannot_be_written(env, monkeypatch):
+    from fastapi.testclient import TestClient
+    from itd import api
+    from itd.db import get_db
+
+    def broken(*a, **k):                                   # as on 7 November: the database rules refused the log entry
+        from pymongo.errors import WriteError
+        raise WriteError("Document failed validation", code=121)
+    monkeypatch.setattr(api, "log_access", broken)
+    r = TestClient(api.app, raise_server_exceptions=False).post("/api/run", json={"dataset": "cert_ok"}, headers=_auth())
+    assert r.status_code == 500 and get_db().run_requests.count_documents({}) == 0      # nothing for the worker to run
+
 def test_second_request_is_refused_while_one_is_active(env):
     from itd.db import get_db
     c = _client()
@@ -164,6 +176,20 @@ def test_worker_loop_handles_waiting_requests_and_clears_stale_ones(env):
     worker.serve(poll=0, once=True, runner=lambda p, r: {})
     assert c.get("/api/run/status", headers=_auth()).json()["request"]["status"] == "done"
 
+
+def test_worker_waits_out_a_database_outage(env, monkeypatch):
+    from pymongo.errors import ServerSelectionTimeoutError
+    from itd import jobs, worker
+    calls = []
+
+    def flaky(db):
+        calls.append(1)
+        if len(calls) == 1:
+            raise ServerSelectionTimeoutError("MongoDB is not reachable")
+        return None
+    monkeypatch.setattr(jobs, "claim_next", flaky)
+    worker.serve(poll=0, once=True, runner=lambda *a: None)             # returns instead of crashing
+    assert len(calls) == 2
 
 def test_request_documents_follow_the_schema(env):
     from itd import schema

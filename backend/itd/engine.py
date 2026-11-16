@@ -16,7 +16,7 @@ from .features import FEATURES, session_features
 from .ingest import load_dataset
 from . import rules
 from . import validate
-from .models import dumps, loads, score_models, time_split, train_models
+from .models import dumps, loads, oof_scores, score_models, time_split, train_models
 from .risk import calibrate, combine, evaluate, evaluate_model, fit_risk_engine
 
 BLOCK = 50_000
@@ -80,16 +80,16 @@ def run(data_dir, retrain=False, report_dir="reports", pseudonymize=None):
         prior = {d["_id"]: d for d in db.user_baselines.find()}
     feats, final = add_deviations(feats, prior)
     X, y = feats[FEATURES].to_numpy(float), feats["label"].to_numpy(int)
-    tr, va, te = time_split(len(feats))
+    tr, te = time_split(len(feats))
     t = step("features_and_baselines", t)
 
     print("4/5 ML models ...")
     loaded = None if retrain else load_models()
     if loaded is None:
-        if y[tr].sum() == 0 or y[va].sum() == 0 or y[te].sum() == 0:
-            raise SystemExit("Each of train/validation/test needs at least one malicious session.")
+        if y[tr].sum() < 2 or y[te].sum() == 0:
+            raise SystemExit("The training part needs at least two malicious sessions and the test part at least one.")
         models, extra = train_models(X[tr], y[tr])
-        risk_cfg = fit_risk_engine(score_models(models, extra, X[va]), y[va])
+        risk_cfg = fit_risk_engine(oof_scores(X[tr], y[tr]), y[tr])      # tuned by cross-validation inside the training part
         save_models(models, extra, risk_cfg, {"validation_f1": risk_cfg["val_f1"]})
         models, extra, risk_cfg, metrics = load_models()      # trained once, saved, then loaded to score
     else:
@@ -102,15 +102,15 @@ def run(data_dir, retrain=False, report_dir="reports", pseudonymize=None):
     scores = calibrate(raw, risk_cfg["calibrators"]) if risk_cfg.get("calibrators") else raw
     risk = combine(scores, risk_cfg["weights"])
     thr = risk_cfg["threshold"]
-    if loaded is None:  # test-set evaluation (never used for tuning: every threshold comes from validation data)
+    if loaded is None:  # test-set evaluation (never used for tuning: every threshold comes from cross-validation on the training part)
         metrics["test"] = {"risk_engine": {**evaluate(y[te], risk[te], thr), "brier": float(brier_score_loss(y[te], risk[te] / 100))},
                            **{k: evaluate_model(y[te], scores[k][te], risk_cfg["val_thresholds"][k], raw[k][te]) for k in scores}}
-        metrics["test"].update(rules.reference_metrics(feats, y, va, te))      # simple reference methods, thresholds from validation data
-        metrics["sizes"] = {"train": len(tr), "validation": len(va), "test": len(te)}
+        metrics["test"].update(rules.reference_metrics(feats, y, tr, te))      # simple reference methods, thresholds from the training part
+        metrics["sizes"] = {"train": len(tr), "test": len(te)}
         db.trained_models.update_one({"_id": "current"}, {"$set": {"metrics": metrics}})
     splits = np.empty(len(feats), dtype=object)
     if loaded is None:
-        splits[tr], splits[va], splits[te] = "train", "validation", "test"
+        splits[tr], splits[te] = "train", "test"
     else:                                   # a saved model never saw this batch: its time parts mean nothing here
         splits[:] = "scored"
 

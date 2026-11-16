@@ -25,11 +25,24 @@ def inspect(path, rows=3):
             print(f"-- values of '{c}':", df[c].value_counts().head(25).to_dict())
 
 
-def _match(series, needles):
+def _match(series, needles, exact=False):
     s = series.fillna("").str.lower()
+    if exact:                            # "Login" must not also catch "Login Failed"
+        return s.isin([str(n).lower() for n in needles])
     out = pd.Series(False, index=series.index)
     for n in needles:
         out |= s.str.contains(str(n).lower(), regex=False)
+    return out
+
+
+def _first(d, cols):
+    """First non-empty value among one or more mapped columns (SPEDIA keeps some file names in Path, not Filename)."""
+    if not cols:
+        return ""
+    cols = [cols] if isinstance(cols, str) else cols
+    out = d[cols[0]]
+    for c in cols[1:]:
+        out = out.fillna(d[c])
     return out
 
 
@@ -37,6 +50,8 @@ def convert(csv_path, m, out):
     df = pd.read_csv(csv_path, dtype=str)
     df["time"] = pd.to_datetime(df[m["time_column"]], format=m.get("time_format"), errors="coerce", utc=True).dt.tz_localize(None)
     df = df[df["time"].notna()].copy()
+    if m.get("drop_missing_user"):       # an event without a user cannot belong to that user's session
+        df = df[df[m["user_column"]].notna()].copy()
     df["user"] = df[m["user_column"]].fillna("unknown")
     df["pc"] = df[m["host_column"]].fillna("HOST") if m.get("host_column") else "HOST"
     df["id"] = "E" + df.index.astype(str)
@@ -47,7 +62,7 @@ def convert(csv_path, m, out):
     for k in KINDS:
         needles = m["type_map"].get(k, [])
         if needles:
-            kind[_match(et, needles) & (kind == "")] = k
+            kind[_match(et, needles, m.get("type_exact", False)) & (kind == "")] = k
     df["kind"] = kind
     df = df[df["kind"] != ""]
     label = label.reindex(df.index)
@@ -69,13 +84,15 @@ def convert(csv_path, m, out):
             pd.DataFrame({"id": "LI" + g["grp"].astype(str), "time": g["t0"], "user": g["user"], "pc": g["pc"], "activity": "Logon"}),
             pd.DataFrame({"id": "LO" + g["grp"].astype(str), "time": g["t1"], "user": g["user"], "pc": g["pc"], "activity": "Logoff"})])
     save("logon", logon, ["activity"])
-    dev = df[df["kind"] == "device"].assign(activity="Connect")
+    dev = df[df["kind"] == "device"]
+    act = dev[m["device_activity_column"]].fillna("") if m.get("device_activity_column") else pd.Series("", index=dev.index)
+    dev = dev.assign(activity=np.where(act.str.lower().str.contains("disconnect"), "Disconnect", "Connect"))  # not a connection
     save("device", dev, ["activity"])
     em = df[df["kind"] == "email"].assign(to=lambda d: d[m["to_column"]] if m.get("to_column") else "",
                                            size=lambda d: d[m["size_column"]] if m.get("size_column") else "0",
                                            attachments=lambda d: d[m["attachments_column"]] if m.get("attachments_column") else "0")
     save("email", em, ["to", "size", "attachments"])
-    fl = df[df["kind"] == "file"].assign(filename=lambda d: d[m["filename_column"]] if m.get("filename_column") else "")
+    fl = df[df["kind"] == "file"].assign(filename=lambda d: _first(d, m.get("filename_column")))
     save("file", fl, ["filename"])
     ht = df[df["kind"] == "http"].assign(url=lambda d: d[m["url_column"]] if m.get("url_column") else "")
     save("http", ht, ["url"])

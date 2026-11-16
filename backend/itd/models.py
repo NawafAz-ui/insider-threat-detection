@@ -4,6 +4,7 @@ import joblib
 import numpy as np
 from sklearn.ensemble import IsolationForest
 from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import StratifiedKFold
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from xgboost import XGBClassifier
@@ -11,9 +12,22 @@ from . import config
 
 
 def time_split(n):
-    """Sessions are already sorted by time: first 70% train, next 15% validation, last 15% test."""
-    a, b = int(n * config.SPLIT[0]), int(n * (config.SPLIT[0] + config.SPLIT[1]))
-    return np.arange(0, a), np.arange(a, b), np.arange(b, n)
+    """Sessions are already sorted by time: first 80% train, last 20% test (config.SPLIT)."""
+    a = int(n * config.SPLIT[0])
+    return np.arange(0, a), np.arange(a, n)
+
+
+def oof_scores(X, y, folds=None):
+    """Out-of-fold scores of the training part: every session is scored by models trained without it. They take the
+    place of a validation part for calibration, weights and thresholds, so the test part is never used for tuning."""
+    k = max(2, min(folds or config.FOLDS, int(y.sum()), int(len(y) - y.sum())))
+    out = None
+    for a, b in StratifiedKFold(n_splits=k, shuffle=True, random_state=config.RANDOM_STATE).split(X, y):
+        s = score_models(*train_models(X[a], y[a]), X[b])
+        out = out or {m: np.zeros(len(y)) for m in s}
+        for m, v in s.items():
+            out[m][b] = v
+    return out
 
 
 def train_models(X_train, y_train):

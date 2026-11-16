@@ -1,4 +1,5 @@
-"""User-relative baselines: running mean / std per user (Welford), updated after every session.
+"""User-relative baselines: running mean / std per user (Welford). A session joins its user's baseline only once it has
+ended, so a session that overlaps another session of the same user is never compared with that unfinished session (issue 14).
 The state saved per user also holds the start time of the last session, so recency carries over to the next batch."""
 import numpy as np
 import pandas as pd
@@ -29,6 +30,7 @@ def add_deviations(s: pd.DataFrame, prior: dict | None = None):
     X = s[BASE_METRICS].to_numpy(float)
     users = s["user"].to_numpy()
     starts = s["start"].to_numpy()
+    ends = s["end"].to_numpy() if "end" in s else starts       # frames without an end: a session counts right away
     n_rows, k = X.shape
     dev = np.zeros((n_rows, k)); mean_b = np.zeros((n_rows, k)); std_b = np.zeros((n_rows, k))
     recency = np.zeros(n_rows)
@@ -36,6 +38,14 @@ def add_deviations(s: pd.DataFrame, prior: dict | None = None):
                      m2=np.array([p["m2"][m] for m in BASE_METRICS]),
                      last=np.datetime64(p["last"]) if p.get("last") else None) for u, p in prior.items()}
     floors = np.array([_floor(m) for m in BASE_METRICS])
+    pending = {}                                                # user -> [(end, row)] of sessions not yet in the baseline
+
+    def add(st, x):                                             # Welford update with one finished session
+        st["n"] += 1
+        d = x - st["mean"]
+        st["mean"] = st["mean"] + d / st["n"]
+        st["m2"] = st["m2"] + d * (x - st["mean"])
+
     for i in range(n_rows):
         if users[i] not in seen:
             # A saved baseline is kept only if this batch continues after its last session. If the batch starts at or
@@ -45,18 +55,21 @@ def add_deviations(s: pd.DataFrame, prior: dict | None = None):
             if old is not None and (old["last"] is None or starts[i] <= old["last"]):
                 del state[users[i]]
         st = state.setdefault(users[i], dict(n=0, mean=np.zeros(k), m2=np.zeros(k), last=None))
+        waiting = pending.get(users[i], [])
+        for end, j in sorted(w for w in waiting if w[0] <= starts[i]):
+            add(st, X[j])
+        pending[users[i]] = [w for w in waiting if w[0] > starts[i]]
         n = st["n"]
         std = np.sqrt(st["m2"] / n) if n > 1 else np.zeros(k)
         mean_b[i], std_b[i] = st["mean"], std
         if n >= MIN_HISTORY:
             dev[i] = np.clip((X[i] - st["mean"]) / np.maximum(std, floors), -CLIP, CLIP)
         recency[i] = 0.0 if st["last"] is None else _working_gap_hours(st["last"], starts[i])
-        # Welford update AFTER scoring this session
-        st["n"] = n + 1
-        d = X[i] - st["mean"]
-        st["mean"] = st["mean"] + d / st["n"]
-        st["m2"] = st["m2"] + d * (X[i] - st["mean"])
+        pending[users[i]].append((ends[i], i))                 # joins the baseline once it has ended
         st["last"] = starts[i]
+    for u, waiting in pending.items():                          # at the end of the batch every session has ended
+        for end, j in sorted(waiting):
+            add(state[u], X[j])
     out = s.copy()
     out[DEV_FEATURES] = dev
     out["hours_since_prev_session"] = recency
