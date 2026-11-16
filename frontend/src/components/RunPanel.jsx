@@ -50,7 +50,7 @@ export default function RunPanel({ run }) {
     <div style={{ marginBottom: 16 }}>
       <p className="muted small" style={{ marginBottom: 8 }}>
         Last batch run: {new Date(run.at).toLocaleString()} ({run.seconds} s). Results on the held-out test part, with every threshold
-        chosen on validation data. Sample data is easier than real logs, so these are not research findings.
+        chosen by cross-validation on the training part. These are prototype results, not research findings.
       </p>
       <div className="card tablecard">
         <table>
@@ -59,7 +59,7 @@ export default function RunPanel({ run }) {
             {models.map(row)}
             {refs.length > 0 && (
               <tr><td colSpan={7} className="muted small" style={{ background: "var(--bg)" }}>
-                Simple reference methods (no learning; the threshold is chosen on validation data)
+                Simple reference methods (no learning; the threshold is chosen on the training part)
               </td></tr>
             )}
             {refs.map(row)}

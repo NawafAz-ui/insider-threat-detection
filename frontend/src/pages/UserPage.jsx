@@ -41,11 +41,11 @@ export default function UserPage({ id }) {
         <div className="card">
           <h3>Flagged sessions of this user</h3>
           {flagged.length === 0 ? <p className="muted">No flagged sessions.</p> : (
-            <table className="plain"><thead><tr><th>Level</th><th>Risk</th><th>Start</th></tr></thead>
+            <table className="plain"><thead><tr><th>Level</th><th>Risk</th><th>Computer</th><th>Start</th></tr></thead>
               <tbody>{flagged.map((s) => (
                 <tr key={s.session_id} className="click" tabIndex={0} onClick={() => toSession(s.session_id)} onKeyDown={(e) => e.key === "Enter" && toSession(s.session_id)}>
                   <td><span className={`pill ${riskClass(s.risk_score)}`}>{riskLabel(s.risk_score)}</span></td>
-                  <td className="n">{s.risk_score.toFixed(0)}</td><td>{fmtDate(s.start)}</td></tr>))}</tbody></table>)}
+                  <td className="n">{s.risk_score.toFixed(0)}</td><td className="pc" title={s.pc}>{s.pc}</td><td>{fmtDate(s.start)}</td></tr>))}</tbody></table>)}
         </div>
       </div>
     </section>

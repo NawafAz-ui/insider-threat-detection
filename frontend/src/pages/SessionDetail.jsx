@@ -24,6 +24,7 @@ export default function SessionDetail({ id }) {
     <section>
       <p className="crumbs"><button className="link" onClick={toList}>Flagged sessions</button> / <button className="link" onClick={() => toUser(d.user)}>{d.user}</button></p>
       <h1 style={{ marginTop: 6 }}><button className="link bigname" onClick={() => toUser(d.user)}>{d.user}</button> <span className="muted" style={{ fontWeight: 400, fontSize: "1.1rem" }}>{fmtDate(d.start)} to {fmtDate(d.end)} · {mins} min</span></h1>
+      <p className="muted" style={{ overflowWrap: "anywhere" }}>Computer: {d.pc}</p>
       <div className="detail">
         <div>
           <p className="notice">A flag is not proof of wrongdoing. Review the evidence before taking any action. <button className="link" onClick={() => toUser(d.user)}>See this user's history</button></p>

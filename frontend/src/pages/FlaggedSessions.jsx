@@ -9,8 +9,8 @@ const PAGE = 50;
 // Built in the browser from the rows already on screen, so the API gets no new request and writes nothing.
 function saveCsv(rows) {
   const note = "A flag is a lead for a human, not proof of wrongdoing";
-  const csv = toCsv(["session_id", "user", "session_start", "session_end", "risk_score", "note"],
-    rows.map((r) => [r.session_id, r.user, r.start, r.end, r.risk_score, note]));
+  const csv = toCsv(["session_id", "user", "computer", "session_start", "session_end", "risk_score", "note"],
+    rows.map((r) => [r.session_id, r.user, r.pc, r.start, r.end, r.risk_score, note]));
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
   a.download = "flagged-sessions.csv";
@@ -47,19 +47,20 @@ export default function FlaggedSessions() {
       <p className="muted">Highest risk first. Select a session to see why it was flagged.</p>
       <div className="stats">
         {stat("Flagged", meta.total.toLocaleString(), `of ${meta.scored.toLocaleString()} sessions scored`)}
-        {stat("Flag threshold", meta.threshold, "out of 100, set on validation data")}
+        {stat("Flag threshold", meta.threshold, "out of 100, set on the training part")}
         {stat("Review first", meta.high.toLocaleString(), "scored 80 or higher")}
       </div>
       <RunPanel run={run} />
       <div className="card tablecard">
         <table>
-          <thead><tr><th>Level</th><th>Risk score</th><th>User</th><th>Session start</th><th>Duration</th><th></th></tr></thead>
+          <thead><tr><th>Level</th><th>Risk score</th><th>User</th><th>Computer</th><th>Session start</th><th>Duration</th><th></th></tr></thead>
           <tbody>
             {rows.map((r) => (
               <tr key={r.session_id} tabIndex={0} onClick={() => toSession(r.session_id)} onKeyDown={(e) => e.key === "Enter" && toSession(r.session_id)}>
                 <td><span className={`pill ${riskClass(r.risk_score)}`}>{riskLabel(r.risk_score)}</span></td>
                 <td><span className="n">{r.risk_score.toFixed(0)}</span><span className="meter"><i className={riskClass(r.risk_score)} style={{ width: `${r.risk_score}%` }} /></span></td>
                 <td className="n"><button className="link" onClick={(e) => { e.stopPropagation(); toUser(r.user); }}>{r.user}</button></td>
+                <td className="pc" title={r.pc}>{r.pc}</td>
                 <td>{fmtDate(r.start)}</td>
                 <td>{Math.round((new Date(r.end) - new Date(r.start)) / 60000)} min</td>
                 <td className="muted">›</td>

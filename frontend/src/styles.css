@@ -75,3 +75,5 @@ table.plain { width: 100%; border-collapse: collapse; } table.plain th { padding
 table.plain tr.click { cursor: pointer; } table.plain tr.click:hover, table.plain tr.click:focus-visible { background: #f5f8fa; }
 .link.bigname { font: inherit; font-weight: 700; color: var(--ink); text-decoration-color: var(--teal); }
 td .link { font: inherit; color: var(--ink); }
+.pc { max-width: 13rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } /* long hashed host names: the full name is in the tooltip */
+table.plain .pc { max-width: 9rem; }
