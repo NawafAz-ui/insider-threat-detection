@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Humanized Report Check</title>
+<!-- Source of docs/HUMANIZED_CHECK_16_11.pdf -->
+<style>
+@page { size: A4; margin: 12mm; }
+* { box-sizing: border-box; }
+body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 8.8pt; line-height: 1.27; color: #000; background: #fff; margin: 0; }
+h1 { font-size: 16pt; margin: 0 0 4pt; }
+h2 { font-size: 11.5pt; margin: 9pt 0 3pt; break-after: avoid; page-break-after: avoid; }
+p { margin: 0 0 4pt; }
+.lead { font-size: 10pt; }
+.meta { color: #333; font-size: 8.5pt; }
+ul { margin: 0 0 4pt 14pt; padding: 0; }
+li { margin: 0 0 2pt; }
+table { width: 100%; border-collapse: collapse; font-size: 7.9pt; margin: 0 0 4pt; }
+thead { display: table-header-group; }
+tr { break-inside: avoid; page-break-inside: avoid; }
+th { background: #000; color: #fff; text-align: left; font-weight: 600; padding: 2pt 3pt; border: 0.6pt solid #000; }
+td { border: 0.6pt solid #888; padding: 2pt 3pt; vertical-align: top; }
+</style>
+</head>
+<body>
+
+<h1>Humanized Report Check</h1>
+<p class="lead">This page compares the humanized report (word-reports/Research_Methodology_Group_7_16.11.2026_Humanized.docx) with the original 16.11 version. It tells you what is correct and what to fix before the humanized file is submitted.</p>
+<p class="meta">Checked on 16 November 2026, paragraph by paragraph and word by word. Paragraph numbers below (#) count only the changed paragraphs, in reading order.</p>
+
+<p class="meta"><b>Update, 16 November 2026:</b> all fixes in Sections 3 and 4 were applied to the humanized file (26 word changes, 75 semicolons again), and its yellow was set again against the 09.11 version: a sentence is yellow when at least a third of its words changed, and new paragraphs, rows and sections are yellow. White header text stays plain. Sections 5 and 6 were not applied.</p>
+<h2>1. Verdict</h2>
+<p><b>Mostly correct, but not ready to submit.</b> Every number, reference, table, figure and heading is the same, and only yellow text was reworded. In 79 reworded paragraphs, 18 changes alter the meaning or make a statement wrong. The rewording also adds 5 semicolons, removes 1 that must stay, and leaves 12 grammar slips. All of them are small, word-level fixes. Sections 5 and 6 are optional, because any rewording there can make the text sound machine-written again.</p>
+
+<h2>2. What matches the original</h2>
+<table>
+<colgroup><col style="width:40%"><col style="width:20%"><col style="width:20%"><col style="width:20%"></colgroup>
+<thead><tr><th>Check</th><th>Original</th><th>Humanized</th><th>Result</th></tr></thead>
+<tbody>
+<tr><td>Paragraphs, headings, tables, figures</td><td>790, 31, 14, 6</td><td>790, 31, 14, 6</td><td>Same</td></tr>
+<tr><td>Paragraphs that are not yellow</td><td colspan="2">711 paragraphs, word for word</td><td>Same</td></tr>
+<tr><td>Yellow highlights</td><td>203 runs</td><td>203 runs</td><td>Same</td></tr>
+<tr><td>Numbers in the text</td><td colspan="2">All values the same. Only "seven" became "7", "five" became "5" and "1,000" became "1k".</td><td>Correct</td></tr>
+<tr><td>References, citations, test and issue ids</td><td colspan="2">Unchanged</td><td>Correct</td></tr>
+<tr><td>"We", "our", em dashes, tracked changes</td><td colspan="2">None in either file</td><td>Correct</td></tr>
+<tr><td>Semicolons</td><td>75</td><td>79</td><td>Fix (Section 4)</td></tr>
+<tr><td>Words</td><td>13,042</td><td>13,146</td><td>Fine</td></tr>
+</tbody>
+</table>
+
+<h2>3. Must fix: the meaning changed</h2>
+<p>Each fix changes only the words that make the statement wrong. The rest of your humanized sentence stays as it is.</p>
+<table><colgroup><col style='width:4%'><col style='width:9%'><col style='width:43%'><col style='width:44%'></colgroup><thead><tr><th>#</th><th>Section</th><th>Humanized text now</th><th>Smallest fix (your wording kept)</th></tr></thead><tbody><tr><td>3</td><td>4, FR3</td><td>Only overlap sessions on hand-made data</td><td>Overlapping sessions only on hand-made data</td></tr><tr><td>5</td><td>4, table</td><td>The prototype for SPEDIA is available</td><td>The prototype run for SPEDIA is available</td></tr><tr><td>11</td><td>8.1</td><td>the published MD5 sum was checked ... login records are rarely used to frame its other events</td><td>the published MD5 sum was matched ... login records rarely frame its other events</td></tr><tr><td>20</td><td>10.2, table</td><td>page 657 ms</td><td>Sign-in page 657 ms</td></tr><tr><td>26</td><td>10.3, TC8</td><td>it is not claimed that the engine tunes on these</td><td>it is not claimed that the engine tunes only on these</td></tr><tr><td>29</td><td>10.3, TC28</td><td>but not events before or after the session (on another PC, or from another user), and not a session that starts while another session of the same user is still active.</td><td>but not events before or after the session, on another PC or from another user, and a session that starts while another session of the same user is still active is not compared with it.</td></tr><tr><td>38</td><td>10.4</td><td>a second API with HTTPS</td><td>a second API that requires HTTPS</td></tr><tr><td>39</td><td>11</td><td>that are not general or relating to a stored reason ... The assistant never refused and without the guard, 120 answers</td><td>that are neither general nor relating to a stored reason ... Without the guard the assistant never refused, so only 120 answers</td></tr><tr><td>43</td><td>12.1, issue 16</td><td>It answered 190 out of 230 answers</td><td>It handled 190 out of 230 answers</td></tr><tr><td>49</td><td>12.2</td><td>overlap the other session</td><td>overlap another session</td></tr><tr><td>50</td><td>12.3</td><td>took 3.1 s, with start-up time and roughly 300 MiB of memory used</td><td>took 3.1 s with start-up time and used roughly 300 MiB of memory</td></tr><tr><td>52</td><td>12.3</td><td>one of the laptops is used ... is available on a per-use basis</td><td>one laptop is used ... is paid on a per-use basis</td></tr><tr><td>55</td><td>13, O6</td><td>were answered with 300/300 offline with the guard</td><td>met their rule in 300/300 offline answers with the guard</td></tr><tr><td>56</td><td>13, O7</td><td>was calculated for four data sizes</td><td>was measured for four data sizes</td></tr><tr><td>61</td><td>14, B2</td><td>time and memory on a complete release</td><td>measure time and memory on a complete release</td></tr><tr><td>67</td><td>14, B5</td><td>undergoes the same tests</td><td>passes the same tests</td></tr><tr><td>74</td><td>14, B9</td><td>The logs will be loaded without manual conversion in other formats.</td><td>Logs in other formats will be loaded without manual conversion.</td></tr><tr><td>78</td><td>14, rules</td><td>but one or more rules</td><td>with one or more rules</td></tr></tbody></table>
+
+<h2>4. Must fix: semicolons</h2>
+<p>The report rule is no new semicolons, and the 75 in the base stay.</p>
+<table><colgroup><col style='width:4%'><col style='width:9%'><col style='width:43%'><col style='width:44%'></colgroup><thead><tr><th>#</th><th>Section</th><th>Humanized text now</th><th>Smallest fix (your wording kept)</th></tr></thead><tbody><tr><td>15</td><td>9.2</td><td>other four folds; that is, no session</td><td>other four folds, that is, no session</td></tr><tr><td>21</td><td>10.2</td><td>the API and the database; they do not include</td><td>the API and the database. They do not include</td></tr><tr><td>52</td><td>12.3</td><td>under CC BY 4.0 [D2]; no licence</td><td>under CC BY 4.0 [D2], so no licence</td></tr><tr><td>68</td><td>14, B6</td><td>pseudonymised by default; access log is kept for a limited time; use policy</td><td>pseudonymised by default, access log is kept for a limited time, use policy</td></tr><tr><td>22</td><td>10.2</td><td>do not show any difference (with all 39 features, F1 was 0.99).</td><td>do not show any difference; with all 39 features, F1 was 0.99. (puts the base semicolon back)</td></tr></tbody></table>
+
+<h2>5. Should fix: grammar</h2>
+<table>
+<colgroup><col style="width:4%"><col style="width:7%"><col style="width:44%"><col style="width:45%"></colgroup>
+<thead><tr><th>#</th><th>Section</th><th>Humanized text</th><th>Fix</th></tr></thead>
+<tbody>
+<tr><td>6</td><td>5.4</td><td>There are not foreign keys, but references by value ... MongoDB enforces rules of each collection, indexes support flagged list</td><td>References between collections are by value, not foreign keys ... MongoDB enforces the rules of each collection, and indexes support the flagged list</td></tr>
+<tr><td>10</td><td>8.1</td><td>the original CERT data r4.2 [D1]</td><td>the original CERT r4.2 data [D1]</td></tr>
+<tr><td>11</td><td>8.1</td><td>the one 45.7 MB csv file ... That's 246 sessions</td><td>one 45.7 MB CSV file ... The result is 246 sessions</td></tr>
+<tr><td>16</td><td>10.1</td><td>(via crossvalidation)</td><td>(via cross-validation)</td></tr>
+<tr><td>23</td><td>10.2</td><td>At threshold 35.5, combined score precision 0.94</td><td>At threshold 35.5, the combined score reached precision 0.94</td></tr>
+<tr><td>24</td><td>10.3</td><td>19 manual test cases and the type (...), expected result and requirement is available</td><td>19 manual test cases, each with its type (...), expected result and requirement, is in</td></tr>
+<tr><td>35</td><td>10.4</td><td>This is when an administrator asks for a run</td><td>An administrator asks for a run on the main database.</td></tr>
+<tr><td>38</td><td>10.4</td><td>A backend/scripts/integration_test.py integrated test was added</td><td>An integrated test (backend/scripts/integration_test.py) was added</td></tr>
+<tr><td>48</td><td>12.2</td><td>Now in place and tested.</td><td>It is now in place and tested.</td></tr>
+<tr><td>51</td><td>12.3</td><td>That is not the size at which model training was carried out, nor is the explanation and dashboard.</td><td>Model training, the explanations and the dashboard were not run at that size.</td></tr>
+<tr><td>53</td><td>12.3</td><td>the lack of a hosted assistant that has ever been run with a real key</td><td>a hosted assistant that has never run with a real key</td></tr>
+<tr><td>57</td><td>14</td><td>five experiments were performed on the generated data, 91 automated tests, 12 functional test cases and an integrated test (Section 10) were carried out.</td><td>five experiments were run on generated data, and 91 automated tests, 12 functional test cases and an integrated test were carried out (Section 10).</td></tr>
+</tbody>
+</table>
+
+<h2>6. Optional: style</h2>
+<ul>
+<li>The rest of the report uses "pseudonymize" and "cross-validation" with a hyphen: #12, #15, #16, #46, #68, #69 and #77 use "pseudonymised", "cross validation", "5-fold" or "5 fold".</li>
+<li>Write numbers and units the way the rest of the report does: "222 ms" and "10 ms" (#38), "0.9 GB" (#41), "per 1,000 sessions" instead of "1k" (#76), "16 November" instead of "16th November" (#22), "Section 3" with a capital (#57), and "1.0% to 1.2%" instead of the dash (#18).</li>
+<li>#27 uses a slash ("naming / accusing"). Write "no refusal names or accuses anyone".</li>
+</ul>
+
+</body>
+</html>

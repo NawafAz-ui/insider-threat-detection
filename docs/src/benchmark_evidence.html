@@ -1,0 +1,127 @@
+<!doctype html><html><head><meta charset='utf-8'><title>Benchmark Evidence</title><style>@page { size: A4; margin: 12mm; } body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 8.6pt; line-height: 1.25; color: #000; margin: 0; }
+h1 { font-size: 16pt; margin: 0 0 4pt; } h2 { font-size: 11pt; margin: 9pt 0 3pt; break-after: avoid; } p { margin: 0 0 4pt; } .meta { color: #333; }
+table { width: 100%; border-collapse: collapse; font-size: 7.8pt; margin: 0 0 3pt; } tr { break-inside: avoid; } th { background: #000; color: #fff; text-align: left; padding: 2pt 3pt; }
+td { border: 0.5pt solid #888; padding: 2pt 3pt; vertical-align: top; } .src { font-size: 7pt; color: #333; word-break: break-all; } ul { margin: 0 0 4pt 14pt; padding: 0; }</style></head><body>
+<h1>Benchmark Evidence</h1>
+<p>This page backs every cell of Table I in the Capstone report (Section V-B, Benchmarking with other systems). Use it to check a cell or answer a question about it.</p>
+<p class='meta'>Checked on 16 November 2026 against each system's own documentation. Quotes are shortened where marked with ... . Yes: stated. Partly: limited, optional or an add-on. No: not offered or commercial only. n/s: not stated.</p>
+<h2>What to check before submitting</h2><ul>
+<li>Some quotes came through a page reader, not the raw page: Proofpoint P1, P4, P5, P6 and P9, the Exabeam pages and the Securonix web pages. Open them once in a browser.</li>
+<li>Exabeam's session score comes from its older Advanced Analytics product. The new New-Scale platform scores threats, not sessions.</li>
+<li>Splunk UBA: end of sale announced in December 2025 (the FAQ says 10 December, the help page 12 December), end of life 31 January 2027.</li>
+<li>DTEX technical documentation needs a customer login, so its rows rest on product pages. Securonix rows rest on product pages and datasheets.</li>
+<li>The Proofpoint baseline answer rests on a 2020 brief, and the Wazuh machine-learning answer on a 2023 blog post.</li></ul>
+<h2>Microsoft Purview Insider Risk Management</h2><table><colgroup><col style='width:30%'><col style='width:8%'><col style='width:52%'><col style='width:10%'></colgroup><tr><th>Feature</th><th>Cell</th><th>Evidence</th><th>Source</th></tr>
+<tr><td>Baseline of each user&#x27;s own behavior</td><td>Yes</td><td>Scores are boosted if the detected activity deviates from the user&#x27;s typical behavior.</td><td>M2</td></tr>
+<tr><td>Comparison with peer groups</td><td>Yes</td><td>exfiltration activities ... exceed organization or peer group norms</td><td>M2</td></tr>
+<tr><td>Risk score for each logon-to-logoff session</td><td>n/s</td><td>Closest unit is a daily insight: 10 files in a single day count as a single insight.</td><td>M5</td></tr>
+<tr><td>Machine-learning anomaly detection</td><td>Yes</td><td>analyzes user activities over a period of 90-120 days and looks for anomalous behavior</td><td>M4</td></tr>
+<tr><td>Risk score for users, alerts or sessions</td><td>Yes</td><td>Every generated alert has a risk score, a list of activities performed, tags, and triggers.</td><td>M3</td></tr>
+<tr><td>Reasons shown behind an alert or score</td><td>Yes</td><td>Risk factors help you determine how risky the user&#x27;s risk management activity is</td><td>M3</td></tr>
+<tr><td>Investigation timeline or dashboard</td><td>Yes</td><td>reviewers can quickly review a timeline of detected potentially risky activity</td><td>M3</td></tr>
+<tr><td>Generative AI assistant for alerts</td><td>Yes</td><td>Select Summarize with Copilot ... to quickly summarize an alert</td><td>M3</td></tr>
+<tr><td>Masked or pseudonymized user names</td><td>Yes</td><td>users are pseudonymized by default</td><td>M1</td></tr>
+<tr><td>Free or open source</td><td>No</td><td>Included in Microsoft 365 E5 and Purview suites, trial available.</td><td>M4, M6</td></tr>
+<tr><td>Analyzes offline log files (CSV)</td><td>No</td><td>you can&#x27;t import raw detection signals into Insider Risk Management</td><td>M4</td></tr>
+</table>
+<h2>Exabeam (Advanced Analytics, now New-Scale platform)</h2><table><colgroup><col style='width:30%'><col style='width:8%'><col style='width:52%'><col style='width:10%'></colgroup><tr><th>Feature</th><th>Cell</th><th>Evidence</th><th>Source</th></tr>
+<tr><td>Baseline of each user&#x27;s own behavior</td><td>Yes</td><td>continuously maintains a baseline of normal behaviors for each user</td><td>E3</td></tr>
+<tr><td>Comparison with peer groups</td><td>Yes</td><td>anomalous behaviors relative to people with roles similar to the individual (peer group)</td><td>E2</td></tr>
+<tr><td>Risk score for each logon-to-logoff session</td><td>Yes</td><td>Session: All user activity, starting from the time they log in until the time they log out</td><td>E1</td></tr>
+<tr><td>Machine-learning anomaly detection</td><td>Yes</td><td>machine learning algorithms are used to identify anomalous behaviors</td><td>E2</td></tr>
+<tr><td>Risk score for users, alerts or sessions</td><td>Yes</td><td>This is the total risk score for this session.</td><td>E1</td></tr>
+<tr><td>Reasons shown behind an alert or score</td><td>Yes</td><td>It lists the events that contributed to the data point&#x27;s risk score.</td><td>E1</td></tr>
+<tr><td>Investigation timeline or dashboard</td><td>Yes</td><td>The Session Timeline Page displays all the events in chronological order</td><td>E1</td></tr>
+<tr><td>Generative AI assistant for alerts</td><td>Yes</td><td>Receive an AI-generated summary of a threat described in a case or alert.</td><td>E4</td></tr>
+<tr><td>Masked or pseudonymized user names</td><td>Yes</td><td>With data masking enabled, the only user able to see a user&#x27;s personal information ...</td><td>E5</td></tr>
+<tr><td>Free or open source</td><td>No</td><td>licensed as term subscriptions with three different product licenses</td><td>E6</td></tr>
+<tr><td>Analyzes offline log files (CSV)</td><td>Partly</td><td>Collectors read text log files *.log, *.txt and *.csv. SIEM feeds via Syslog.</td><td>E2, E7</td></tr>
+</table>
+<h2>Splunk User Behavior Analytics</h2><table><colgroup><col style='width:30%'><col style='width:8%'><col style='width:52%'><col style='width:10%'></colgroup><tr><th>Feature</th><th>Cell</th><th>Evidence</th><th>Source</th></tr>
+<tr><td>Baseline of each user&#x27;s own behavior</td><td>Yes</td><td>unsupervised machine learning to profile normal behavior for each identity and asset</td><td>S3</td></tr>
+<tr><td>Comparison with peer groups</td><td>Yes</td><td>finds other entities most similar in behavior</td><td>S4</td></tr>
+<tr><td>Risk score for each logon-to-logoff session</td><td>Partly</td><td>This panel summarizes all sessions associated with the selected user.</td><td>S5</td></tr>
+<tr><td>Machine-learning anomaly detection</td><td>Yes</td><td>Use unsupervised machine learning algorithms to analyze the data</td><td>S1</td></tr>
+<tr><td>Risk score for users, alerts or sessions</td><td>Yes</td><td>A user&#x27;s risk score is determined primarily by the number of anomalies and threats</td><td>S5</td></tr>
+<tr><td>Reasons shown behind an alert or score</td><td>Yes</td><td>Click the risk score to learn more about the factors contributing to the score</td><td>S6</td></tr>
+<tr><td>Investigation timeline or dashboard</td><td>Yes</td><td>The User Anomalies Timeline panel shows the types and risk levels of anomalies</td><td>S5</td></tr>
+<tr><td>Generative AI assistant for alerts</td><td>n/s</td><td>Not found on the UBA pages checked.</td><td></td></tr>
+<tr><td>Masked or pseudonymized user names</td><td>Yes</td><td>Enabling PII masking ... replaced with a string of characters</td><td>S8</td></tr>
+<tr><td>Free or open source</td><td>No</td><td>End-of-sale FAQ refers to UBA licence terms. Successor only in Splunk ES Premier.</td><td>S9</td></tr>
+<tr><td>Analyzes offline log files (CSV)</td><td>Partly</td><td>You can use file-based data sources for testing on a small scale.</td><td>S7</td></tr>
+</table>
+<h2>Securonix UEBA</h2><table><colgroup><col style='width:30%'><col style='width:8%'><col style='width:52%'><col style='width:10%'></colgroup><tr><th>Feature</th><th>Cell</th><th>Evidence</th><th>Source</th></tr>
+<tr><td>Baseline of each user&#x27;s own behavior</td><td>Yes</td><td>deviations from individual or peer-group patterns</td><td>X1</td></tr>
+<tr><td>Comparison with peer groups</td><td>Yes</td><td>deviations from individual or peer-group patterns</td><td>X1</td></tr>
+<tr><td>Risk score for each logon-to-logoff session</td><td>Partly</td><td>correlates signals across users, assets, sessions, and behaviors</td><td>X3</td></tr>
+<tr><td>Machine-learning anomaly detection</td><td>Yes</td><td>applies machine learning and analytics to assign risk scores</td><td>X2</td></tr>
+<tr><td>Risk score for users, alerts or sessions</td><td>Yes</td><td>assign risk scores against users&#x27; behavioral patterns</td><td>X2</td></tr>
+<tr><td>Reasons shown behind an alert or score</td><td>Yes</td><td>analysts receive one alarm with all the related events</td><td>X2</td></tr>
+<tr><td>Investigation timeline or dashboard</td><td>Partly</td><td>analysts can add them to a watch list or investigate their behavior further</td><td>X2</td></tr>
+<tr><td>Generative AI assistant for alerts</td><td>Yes</td><td>Generate concise investigation summaries</td><td>X4, X5</td></tr>
+<tr><td>Masked or pseudonymized user names</td><td>Partly</td><td>data masking and filtering, role-based access, and approval-based unmasking</td><td>X1</td></tr>
+<tr><td>Free or open source</td><td>No</td><td>All licensing models are based on an annual or multi-year commitment.</td><td>X6</td></tr>
+<tr><td>Analyzes offline log files (CSV)</td><td>n/s</td><td>Built-in cloud connectors and SIEM integration. Offline CSV not stated.</td><td>X2</td></tr>
+</table>
+<h2>DTEX Platform (formerly InTERCEPT)</h2><table><colgroup><col style='width:30%'><col style='width:8%'><col style='width:52%'><col style='width:10%'></colgroup><tr><th>Feature</th><th>Cell</th><th>Evidence</th><th>Source</th></tr>
+<tr><td>Baseline of each user&#x27;s own behavior</td><td>Yes</td><td>Automatic user baselining, anomaly detection, and risk scoring</td><td>D1</td></tr>
+<tr><td>Comparison with peer groups</td><td>Yes</td><td>compare them to the group, department, and organization</td><td>D2</td></tr>
+<tr><td>Risk score for each logon-to-logoff session</td><td>n/s</td><td>No page mentions sessions.</td><td></td></tr>
+<tr><td>Machine-learning anomaly detection</td><td>Yes</td><td>high-fidelity metadata and machine learning models</td><td>D3</td></tr>
+<tr><td>Risk score for users, alerts or sessions</td><td>Yes</td><td>dynamic risk scoring</td><td>D2</td></tr>
+<tr><td>Reasons shown behind an alert or score</td><td>Yes</td><td>so you know why something is happening</td><td>D1</td></tr>
+<tr><td>Investigation timeline or dashboard</td><td>Yes</td><td>a single, chronological narrative that shows what a user did</td><td>D3</td></tr>
+<tr><td>Generative AI assistant for alerts</td><td>Yes</td><td>automatically analyzes behavioral context and summarizes findings</td><td>D4</td></tr>
+<tr><td>Masked or pseudonymized user names</td><td>Yes</td><td>Pseudonymization ... removes personal identifiers from activity data</td><td>D3</td></tr>
+<tr><td>Free or open source</td><td>No</td><td>AWS Marketplace: 12-month contract, Software as a Service.</td><td>D5</td></tr>
+<tr><td>Analyzes offline log files (CSV)</td><td>n/s</td><td>Lightweight forwarders collect data per user. Offline import not stated.</td><td>D3</td></tr>
+</table>
+<h2>Proofpoint Insider Threat Management (formerly ObserveIT)</h2><table><colgroup><col style='width:30%'><col style='width:8%'><col style='width:52%'><col style='width:10%'></colgroup><tr><th>Feature</th><th>Cell</th><th>Evidence</th><th>Source</th></tr>
+<tr><td>Baseline of each user&#x27;s own behavior</td><td>n/s</td><td>Current docs silent. A 2020 brief says it works without baselining normal behavior.</td><td>P8</td></tr>
+<tr><td>Comparison with peer groups</td><td>n/s</td><td>Only an industry comparison in Human Risk Explorer.</td><td>P2</td></tr>
+<tr><td>Risk score for each logon-to-logoff session</td><td>Partly</td><td>replays the entire recorded session. Scores are per alert and user.</td><td>P4</td></tr>
+<tr><td>Machine-learning anomaly detection</td><td>Partly</td><td>over 150 rules based on CERT Institute guidelines. AI only in an add-on.</td><td>P2, P3</td></tr>
+<tr><td>Risk score for users, alerts or sessions</td><td>Yes</td><td>The User Risk Score is an intelligent aggregation of a user&#x27;s activity alerts</td><td>P5</td></tr>
+<tr><td>Reasons shown behind an alert or score</td><td>Yes</td><td>metadata and contextualized insights with timeline-based views</td><td>P2</td></tr>
+<tr><td>Investigation timeline or dashboard</td><td>Yes</td><td>view what happened before, during, and after an insider-led incident in a timeline</td><td>P2</td></tr>
+<tr><td>Generative AI assistant for alerts</td><td>Partly</td><td>AI-generated summaries for communications alerts only (add-on).</td><td>P3</td></tr>
+<tr><td>Masked or pseudonymized user names</td><td>Yes</td><td>analysts investigate alerts based on unique, anonymized identifiers</td><td>P2</td></tr>
+<tr><td>Free or open source</td><td>No</td><td>Commercial, request a demo.</td><td>P1</td></tr>
+<tr><td>Analyzes offline log files (CSV)</td><td>n/s</td><td>a single, lightweight endpoint agent. Offline import not stated.</td><td>P2</td></tr>
+</table>
+<h2>Wazuh</h2><table><colgroup><col style='width:30%'><col style='width:8%'><col style='width:52%'><col style='width:10%'></colgroup><tr><th>Feature</th><th>Cell</th><th>Evidence</th><th>Source</th></tr>
+<tr><td>Baseline of each user&#x27;s own behavior</td><td>n/s</td><td>No per-user baseline in the documentation.</td><td></td></tr>
+<tr><td>Comparison with peer groups</td><td>n/s</td><td></td><td></td></tr>
+<tr><td>Risk score for each logon-to-logoff session</td><td>n/s</td><td>Per-event analysis. Rules can link events of the same user.</td><td>W2</td></tr>
+<tr><td>Machine-learning anomaly detection</td><td>Partly</td><td>Rules match decoded events. Optional OpenSearch anomaly plugin (2023 blog).</td><td>W1, W3</td></tr>
+<tr><td>Risk score for users, alerts or sessions</td><td>Partly</td><td>Rule levels from 0 to 16, not a user or session score.</td><td>W4</td></tr>
+<tr><td>Reasons shown behind an alert or score</td><td>Partly</td><td>A rule description explains the alert.</td><td>W2</td></tr>
+<tr><td>Investigation timeline or dashboard</td><td>Yes</td><td>dashboards for threat hunting, malware detection, file integrity monitoring</td><td>W5</td></tr>
+<tr><td>Generative AI assistant for alerts</td><td>Partly</td><td>AI Analyst only in Wazuh Cloud, as a periodic summary.</td><td>W6</td></tr>
+<tr><td>Masked or pseudonymized user names</td><td>n/s</td><td>No pseudonymization feature found.</td><td></td></tr>
+<tr><td>Free or open source</td><td>Yes</td><td>Licensed under GPLv2.</td><td>W7</td></tr>
+<tr><td>Analyzes offline log files (CSV)</td><td>Partly</td><td>Reads log files (json, syslog and others), no CSV format.</td><td>W8</td></tr>
+</table>
+<h2>OpenUBA (beta, v0.0.2)</h2><table><colgroup><col style='width:30%'><col style='width:8%'><col style='width:52%'><col style='width:10%'></colgroup><tr><th>Feature</th><th>Cell</th><th>Evidence</th><th>Source</th></tr>
+<tr><td>Baseline of each user&#x27;s own behavior</td><td>Partly</td><td>Threshold-based and deviation-based detection rules</td><td>O1</td></tr>
+<tr><td>Comparison with peer groups</td><td>n/s</td><td></td><td></td></tr>
+<tr><td>Risk score for each logon-to-logoff session</td><td>n/s</td><td></td><td></td></tr>
+<tr><td>Machine-learning anomaly detection</td><td>Yes</td><td>scikit-learn Isolation Forest anomaly detection</td><td>O1</td></tr>
+<tr><td>Risk score for users, alerts or sessions</td><td>Yes</td><td>Entity management and risk tracking</td><td>O1</td></tr>
+<tr><td>Reasons shown behind an alert or score</td><td>Partly</td><td>Rule-triggered alerts linked to anomalies and cases</td><td>O1</td></tr>
+<tr><td>Investigation timeline or dashboard</td><td>Yes</td><td>Case management with anomaly linking and timeline</td><td>O1</td></tr>
+<tr><td>Generative AI assistant for alerts</td><td>Yes</td><td>Integrated LLM assistant for contextual analysis</td><td>O1</td></tr>
+<tr><td>Masked or pseudonymized user names</td><td>n/s</td><td></td><td></td></tr>
+<tr><td>Free or open source</td><td>Yes</td><td>Apache License 2.0</td><td>O1</td></tr>
+<tr><td>Analyzes offline log files (CSV)</td><td>Yes</td><td>Local CSV: Reads CSV files via pandas</td><td>O1</td></tr>
+</table>
+<h2>Sources</h2>
+<p class='src'><b>Microsoft:</b> M1 https://learn.microsoft.com/en-us/purview/insider-risk-management M2 https://learn.microsoft.com/en-us/purview/insider-risk-management-settings-policy-indicators M3 https://learn.microsoft.com/en-us/purview/insider-risk-management-activities M4 https://learn.microsoft.com/en-us/purview/insider-risk-management-configure M5 https://learn.microsoft.com/en-us/purview/insider-risk-management-adaptive-protection M6 https://learn.microsoft.com/en-us/office365/servicedescriptions/microsoft-365-service-descriptions/microsoft-365-tenantlevel-services-licensing-guidance/microsoft-purview-service-description</p>
+<p class='src'><b>Exabeam:</b> E1 https://docs.exabeam.com/en/cloud-delivered-advanced-analytics/all/user-guide/153664-get-to-know-a-user-profile.html E2 https://docs.exabeam.com/en/cloud-delivered-advanced-analytics/all/administration-guide/understand-the-basics-of-advanced-analytics/how-advanced-analytics-works.html E3 https://docs.exabeam.com/en/advanced-analytics/i56/advanced-analytics-user-guide/113524-what-is-exabeam-.html E4 https://docs.exabeam.com/en/new-scale-soc-platform/all/administration-guide/exabeam-nova.html E5 https://docs.exabeam.com/en/cloud-delivered-advanced-analytics/all/administration-guide/set-up-authentication-and-access-control/mask-data-within-the-advanced-analytics-ui.html E6 https://docs.exabeam.com/en/new-scale-soc-platform/all/administration-guide/licenses/new-scale-security-operations-portfolio-licenses.html E7 https://docs.exabeam.com/en/site-collector/all/administration-guide/set-up-collectors/set-up-linux-file-collector.html</p>
+<p class='src'><b>Splunk:</b> S1 https://help.splunk.com/en/security-offerings/splunk-user-behavior-analytics/plan-and-scale/5.4.5/plan-and-scale-your-splunk-uba-deployment/about-splunk-user-behavior-analytics S2 https://help.splunk.com/en/security-offerings/splunk-user-behavior-analytics/release-notes/5.4.5/additional-resources/splunk-announces-end-of-sale-and-end-of-life-for-standalone-splunk-user-behavior-analytics-software S3 https://help.splunk.com/en/security-offerings/splunk-user-behavior-analytics/use-splunk-user-behavior-analytics/5.4.5/splunk-uba-models/splunk-uba-models-overview S4 https://help.splunk.com/en/security-offerings/splunk-user-behavior-analytics/use-splunk-user-behavior-analytics/5.4.4/assess-security-posture/review-peer-groups-in-splunk-uba S5 https://help.splunk.com/en/security-offerings/splunk-user-behavior-analytics/use-splunk-user-behavior-analytics/5.4.3/security-analyst-workflow/view-user-information S6 https://help.splunk.com/en/security-offerings/splunk-user-behavior-analytics/use-splunk-user-behavior-analytics/5.3.0/security-analyst-workflow/review-current-threats S7 https://help.splunk.com/en/security-offerings/splunk-user-behavior-analytics/get-data-in/5.4.0/prepare-to-add-data-to-splunk-uba/add-file-based-data-sources-to-splunk-uba S8 https://help.splunk.com/en/security-offerings/splunk-user-behavior-analytics/administer/5.4.3/customize-splunk-uba/mask-personally-identifiable-information-in-splunk-uba S9 https://www.splunk.com/en_us/pdfs/product-briefs/splunk-uba-end-of-sale-faq.pdf</p>
+<p class='src'><b>Securonix:</b> X1 https://www.securonix.com/products/ueba/ X2 https://www.securonix.com/wp-content/uploads/2024/04/25-Securonix-UEBA-Datasheet.pdf X3 https://www.securonix.com/wp-content/uploads/2024/04/25-Securonix-Unified-Defense-SIEM-Datasheet_0902.pdf X4 https://www.securonix.com/wp-content/uploads/2024/04/Securonix-EON-Datasheet.pdf X5 https://www.securonix.com/products/sam-the-ai-soc-analyst/ X6 https://www.securonix.com/wp-content/uploads/2026/01/SNX-Licensing-Guidelines-FINAL-15-December-2025.pdf</p>
+<p class='src'><b>DTEX:</b> D1 https://www.dtex.ai/capabilities/insider-risk-management/ D2 https://www.dtex.ai/capabilities/ueba/ D3 https://www.dtex.ai/platform/ D4 https://www.dtex.ai/capabilities/risk-assistant D5 https://aws.amazon.com/marketplace/pp/prodview-55wxfs2ylch2q</p>
+<p class='src'><b>Proofpoint:</b> P1 https://www.proofpoint.com/us/products/insider-threat-management P2 https://www.proofpoint.com/sites/default/files/solution-briefs/pfpt-en-sb-insider-threat-management.pdf P3 https://www.proofpoint.com/sites/default/files/data-sheets/pfpt-us-ds-communications-insights-for-insider-threat-management.pdf P4 https://prod.docs.oit.proofpoint.com/user_guide/activitiesviewuserdiary.htm P5 https://prod.docs.oit.proofpoint.com/insider_threat_intelligence_guide/calculating_user_risk_score.htm P8 https://www.proofpoint.com/sites/default/files/observeit/2020/06/ITM-UEBA-Comparison-Alternate-Without-Vendors.pdf</p>
+<p class='src'><b>Wazuh:</b> W1 https://documentation.wazuh.com/current/getting-started/components/wazuh-server.html W2 https://documentation.wazuh.com/current/user-manual/ruleset/ruleset-xml-syntax/rules.html W3 https://wazuh.com/blog/enhancing-it-security-with-anomaly-detection/ W4 https://documentation.wazuh.com/current/user-manual/ruleset/rules/rules-classification.html W5 https://documentation.wazuh.com/current/getting-started/components/wazuh-dashboard.html W6 https://documentation.wazuh.com/current/cloud-service/ai-analyst.html W7 https://github.com/wazuh/wazuh W8 https://documentation.wazuh.com/current/user-manual/reference/ossec-conf/localfile.html</p>
+<p class='src'><b>OpenUBA:</b> O1 https://github.com/GACWR/OpenUBA</p>
+</body></html>

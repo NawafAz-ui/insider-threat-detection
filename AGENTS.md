@@ -17,7 +17,7 @@ Guide for AI coding agents and new team members. Facts here were read from the c
 | `backend/tests/` | pytest suite (in-memory database, no MongoDB needed) |
 | `frontend/` | React 18 + Vite dashboard (`src/pages`, `src/components`, `api.js`, `router.js`, `format.js`) |
 | `docs/` | CSV layout, API, database, requirements, architecture, security, demo script, weekly plans, Week 3 methodology, use cases, data flow, tools, data rules, evaluation criteria; `docs/figures/` holds the diagrams |
-| `word-reports/` | the group's Word reports: the Research and Methodology base (`Research & Methodology - Group 7 - 06.11.2026 Version.docx`, never edited) the previous version (`Research & Methodology Group 7 09.11.2026 Version.docx`) and the current version (`Research & Methodology - Group 7 - 16.11.2026 Version.docx`) |
+| `word-reports/` | the group's Word reports: the Research and Methodology base (`Research & Methodology - Group 7 - 06.11.2026 Version.docx`, never edited) the previous version (`Research & Methodology Group 7 09.11.2026 Version.docx`) and the current version (`Research & Methodology - Group 7 - 16.11.2026 Version.docx`), the owner's humanized copy `Research_Methodology_Group_7_16.11.2026_Humanized.docx` (the current report since 16 November 2026, edit it only with the smallest word fixes), plus the group's Capstone report (`Capstone A Report - Group 7 - 16.11.2026 Version.docx`, copied from Downloads on 16 November 2026) |
 | `mongo-init/init-users.js` | creates the restricted `itd_engine` and `itd_api` MongoDB users (secure compose only) |
 | `docker-compose.yml`, `docker-compose.secure.yml` | MongoDB 7 (plain, or with authentication and separate accounts) |
 | `start_all.ps1` | Windows: starts database, API and dashboard |

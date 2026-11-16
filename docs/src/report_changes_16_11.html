@@ -26,7 +26,7 @@ td { border: 0.6pt solid #888; padding: 2.5pt 4pt; vertical-align: top; }
 
 <h1>Report Changes 16.11.2026</h1>
 <p class="lead">This page lists every change made to the Research and Methodology report: first the Milestone 5 work merged from Nawaf's branch, then SPEDIA as the prototype dataset and the split into a training and a test part only. Use it to check the yellow text in Word before humanizing it. It is an internal page, not for the supervisor.</p>
-<p class="meta">File: word-reports/Research &amp; Methodology - Group 7 - 16.11.2026 Version.docx, compared with the 09.11 Version. Every difference from the 09.11 version is yellow, small word edits too. The only exception is the white header row of the two new tables, because yellow behind white text cannot be read. Checks: the Word file passed the format check, the 75 semicolons already in the text are all kept, no new text has a semicolon, "we", "our" or a week, and the text grew from 10,402 to 12,287 words.</p>
+<p class="meta">File: word-reports/Research &amp; Methodology - Group 7 - 16.11.2026 Version.docx, compared with the 09.11 Version. Since the evening of 16 November only changes of at least a full sentence are yellow (new sentences, rewritten sentences, new rows and sections). Small word edits are plain and are listed only on this page. Checks: the Word file passed the format check, the 75 semicolons already in the text are all kept, no new text has a semicolon, "we", "our" or a week, and the text grew from 10,402 to 13,042 words.</p>
 
 <h2>1. Changes by section</h2>
 <table>
@@ -81,7 +81,21 @@ td { border: 0.6pt solid #888; padding: 2.5pt 4pt; vertical-align: top; }
 </tbody>
 </table>
 
-<h2>4. Decisions to check</h2>
+<h2>4. Fourth round: database design, feasibility, Capstone A summary, proofreading</h2>
+<table>
+<colgroup><col style="width:16%"><col style="width:20%"><col style="width:64%"></colgroup>
+<thead><tr><th>Section</th><th>Kind</th><th>Change</th></tr></thead>
+<tbody>
+<tr><td>5.4</td><td>New section and table</td><td>Database design: the seven collections, what one document holds, who writes and who reads it, links by value, GridFS, rules and indexes. The black header row is not yellow, as before.</td></tr>
+<tr><td>12.3</td><td>New section</td><td>Feasibility assessment in four paragraphs: technical practicality, scale (CERT r4.2 preprocessing of 15 November peaked at about 4.0 GB, estimate about 4.4 GB for 470,591 sessions, not checked), resources (three members, one laptop, free tools, no licence cost) and limitations.</td></tr>
+<tr><td>14</td><td>New paragraph</td><td>What Capstone A completed, before the Capstone B work packages.</td></tr>
+<tr><td>9.1, 10.2, 12.1, 13</td><td>Sentences and cells changed</td><td>Consistency with the code and the latest measurements: the baseline sentence and Welford update follow the issue 14 fix, page load is now measured (657 ms and 222 ms), issue 15 names the CERT preprocessing measurement, and O1 says SPEDIA and memory up to 29,329 sessions.</td></tr>
+<tr><td>1, 3, 5, 6, 8, 10.3, 11</td><td>Word-level fixes</td><td>Proofreading: "does not", "do not" and "It is" instead of contractions, "Figures 2 and 3", "has three tiers", "if certificates are available", "the two workflows", "a combination of", "differences", "Left as future work: sequence".</td></tr>
+<tr><td>References</td><td>Numbers added</td><td>S2 now ends "Scientific Reports, 14, 24715." and S3 "Cybersecurity, 8, 17.", as found in the reference check.</td></tr>
+</tbody>
+</table>
+
+<h2>5. Decisions to check</h2>
 <ul>
 <li>Section 14 brings back a Capstone B section, which was removed on 6 November. The new research task asks for it.</li>
 <li>The plan has no dates or owners, on purpose.</li>
@@ -90,7 +104,7 @@ td { border: 0.6pt solid #888; padding: 2.5pt 4pt; vertical-align: top; }
 <li>The results on generated data are higher than before (F1 0.99 instead of 0.95). The models now learn from 80% of the sessions, are tuned on all of them by cross-validation, and are tested on a different window, so the old and new values are not directly comparable. Generated data is easy, so neither says much about real logs.</li>
 </ul>
 
-<h2>5. Code changes behind the report</h2>
+<h2>6. Code changes behind the report</h2>
 <p>backend/tests/test_pipeline.py: the session test now checks that a session without a logoff ends at 21:00, twelve hours after its 09:00 logon. It failed when the cap was lifted, so it really checks the cap. The engine now splits the data into training and test only and tunes on out-of-fold scores of the training part (itd/models.py, engine.py, rules.py, cross_eval.py and scripts/run_experiments.py), with a new test. The main database was backed up to backend/backups/2026-11-16_1647 and rebuilt on SPEDIA. All 87 tests pass and 1 is skipped, and the dashboard builds.</p>
 <p>Third round: itd/baselines.py adds a session to the baseline only after it has ended, itd/worker.py waits when the database is down, itd/jobs.py and api.py write the access-log entry before a run request is stored, and the dashboard shows the computer of each session. SPEDIA was run again after a backup to backend/backups/2026-11-16_1707. The integrated test is backend/scripts/integration_test.py, and its report is docs/INTEGRATED_TEST_REPORT.pdf. All 91 tests pass and 1 is skipped, and the dashboard builds.</p>
 
