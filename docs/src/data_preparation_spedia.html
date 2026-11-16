@@ -1,0 +1,70 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>SPEDIA Data Preparation</title><style>
+@page { size: A4; margin: 13mm; }
+body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 9.3pt; line-height: 1.3; color: #000; background: #fff; margin: 0; }
+h1 { font-size: 17pt; margin: 0 0 5pt; } h2 { font-size: 12.2pt; margin: 11pt 0 4pt; break-after: avoid; }
+p { margin: 0 0 5pt; } .lead { font-size: 10.3pt; } .meta { color: #333; font-size: 8.8pt; }
+ul { margin: 0 0 5pt 15pt; padding: 0; } li { margin: 0 0 2.5pt; }
+table { width: 100%; border-collapse: collapse; font-size: 8.4pt; margin: 0 0 5pt; } thead { display: table-header-group; }
+tr { break-inside: avoid; } th { background: #000; color: #fff; text-align: left; font-weight: 600; padding: 2.5pt 4pt; border: .6pt solid #000; }
+td { border: .6pt solid #888; padding: 2.5pt 4pt; vertical-align: top; } .mono { font-family: Menlo, monospace; font-size: 7.6pt; }
+pre { font-family: Menlo, monospace; font-size: 7.4pt; background: #f3f3f3; border: .6pt solid #bbb; padding: 4pt 5pt; white-space: pre-wrap; word-break: break-all; margin: 0 0 4pt; }
+</style></head><body>
+<h1>SPEDIA Data Preparation</h1>
+<p class="lead">This report shows the dataset the prototype uses, SPEDIA: where it came from, how it was checked, put into the prototype's file layout, preprocessed and split into a training and a test part, and the result of the first prototype run on it. CERT r4.2 stays the original dataset of the research and is planned for Capstone B.</p>
+<p class="meta">Prepared on 15 November 2026 and updated on 16 November 2026 for the two-part split and the first run. Numbers are copied from the run's own records in backend/data/spedia on this laptop.</p>
+
+<h2>1. Summary</h2>
+<ul>
+<li>SPEDIA version 2 from Zenodo (DOI 10.5281/zenodo.15525713), licence CC BY 4.0, one file of 45.7 MB. Its checksum matches the published one.</li>
+<li>72,250 events from 06 to 30 March 2025. 55,649 fit the five files of the prototype's layout, and 16,601 have no place in it (10,114 shell commands, 5,399 login records and 1,088 events without a user).</li>
+<li>All files passed the input check and gave 246 sessions of 10 users, 110 of them malicious.</li>
+<li>Split by time into two parts only: 196 training sessions (78 malicious) and 50 test sessions (32 malicious). There is no validation part.</li>
+<li>The prototype now runs on SPEDIA. On the test part the combined score reached precision 0.94, recall 0.94 and F1 0.94.</li>
+</ul>
+
+<h2>2. Why this dataset</h2>
+<p>CERT r4.2 is the original dataset of the research, but it is 16 GB unpacked, too large for a prototype, and it was removed from this laptop. No small public dataset in the exact CERT layout with labelled insiders was found: the only small CERT release (r1, 88 MB) has no answer key. SPEDIA is the second dataset already named in the Research and Methodology report (reference D2). It is small, labelled and openly licensed, and the prototype has a converter for it (itd/spedia.py).</p>
+
+<h2>3. Source and integrity check</h2>
+<table><colgroup><col style="width:14%"><col style="width:86%"></colgroup><thead><tr><th>Item</th><th>Value</th></tr></thead><tbody><tr><td>Dataset</td><td>System for Prediction and Early Detection of Insider Attacks (SPEDIA) Dataset, version 2.</td></tr><tr><td>Record</td><td>Zenodo, https://doi.org/10.5281/zenodo.15525713, published 2025-05-27. Licence CC BY 4.0, so it may be used and shared with credit.</td></tr><tr><td>Contents</td><td>According to the record: attacks performed by real participants in a 30-day exercise, normal activity simulated with a role-based model, and synthetic events derived from the CERT dataset.</td></tr><tr><td>Checksum</td><td>Published MD5 <span class="mono">e01e0baaf3b523a0b493fc9c52af2b1c</span>, MD5 of the download <span class="mono">e01e0baaf3b523a0b493fc9c52af2b1c</span>: match. The file is stored compressed (.xz), and its unpacked content gives the same MD5.</td></tr></tbody></table>
+
+<h2>4. Conversion to the prototype's layout</h2>
+<p>The converter reads a checked mapping (backend/spedia_mapping.json) that names the SPEDIA columns and event types for each CERT file. The result is in backend/data/spedia_cert, where the dashboard's run panel lists it.</p>
+<table><colgroup><col style="width:14%"><col style="width:70%"><col style="width:16%"></colgroup><thead><tr><th>CERT file</th><th>Taken from SPEDIA</th><th>Rows</th></tr></thead><tbody><tr><td>device.csv</td><td>Connect (2,178) and Disconnect (2,228) events</td><td>4,406</td></tr><tr><td>email.csv</td><td>Email sent, with the To, Size and Attachments columns</td><td>18,203</td></tr><tr><td>file.csv</td><td>File accessed, modified, added and deleted, with the name from Filename or else Path</td><td>11,684</td></tr><tr><td>http.csv</td><td>URL accedida, with the Url column</td><td>21,356</td></tr><tr><td>logon.csv</td><td>Built from the activity: a session starts at a user's first event on a host and ends at the last event before a break of 30 minutes</td><td>492</td></tr><tr><td>answers.csv</td><td>Events marked Anomaly = 1</td><td>29,515</td></tr></tbody></table>
+<p>Left out: 10,114 shell commands (9,250 of them marked as anomalies, so much of the real participants' attack activity), 5,399 login records and 1,088 events without a user name. SPEDIA's own login records come from the Linux login log of the exercise servers. Used as sessions, 2,336 of 3,031 sessions held none of the kept events, 1,316 records were the same login written twice in one second, and 21% of the events (11,914 of 56,737) fell outside every session. Sessions built from activity keep 99% of the events and leave no session empty. Checking the real file showed four faults in the converter, which were fixed and tested: Disconnect events were counted as connections, "Login" also matched "Login Failed", file names stored in Path were ignored, and events without a user were put under one shared user called "unknown".</p>
+
+<h2>5. Input check and preprocessing</h2>
+<p>Input check (rules V1 to V10): <b>OK</b>, no rule found a problem. The prototype's own code was used, exactly as the engine runs it.</p>
+<table><colgroup><col style="width:18%"><col style="width:82%"></colgroup><thead><tr><th>Step</th><th>Result</th></tr></thead><tbody><tr><td>Sessions</td><td>246 sessions of 10 users on 62 hosts, from 2025-03-06 to 2025-03-30.</td></tr><tr><td>Events in sessions</td><td>Device 4,358 of 4,406 (98.9%), file 11,577 of 11,684 (99.1%), email 17,955 of 18,203 (98.6%), web 21,215 of 21,356 (99.3%).</td></tr><tr><td>Features</td><td>39 per session: 28 session features, 10 differences from the user's own earlier sessions and the hours since the previous session.</td></tr><tr><td>Labels</td><td>110 malicious sessions (45%), from all 10 users. A session is malicious when one of its events is marked as an anomaly.</td></tr></tbody></table>
+
+<h2>6. Training and test split</h2>
+<p>The sessions are in time order and are cut at 80%. There is no validation part: the flag thresholds, the calibration and the model weights come from five-fold cross-validation inside the training part, and the test part is used once, for the result.</p>
+<table><colgroup><col style="width:16%"><col style="width:15%"><col style="width:15%"><col style="width:12%"><col style="width:21%"><col style="width:21%"></colgroup><thead><tr><th>Part</th><th>Sessions</th><th>Malicious</th><th>Share</th><th>From</th><th>To</th></tr></thead><tbody><tr><td>Train</td><td>196</td><td>78</td><td>40%</td><td>2025-03-06 11:46</td><td>2025-03-28 06:09</td></tr><tr><td>Test</td><td>50</td><td>32</td><td>64%</td><td>2025-03-28 07:05</td><td>2025-03-30 18:36</td></tr></tbody></table>
+
+<h2>7. First prototype run on SPEDIA</h2>
+<p>On 16 November 2026 the main database was backed up (backend/backups/2026-11-16_1707) and the engine trained and scored the prototype on SPEDIA: 246 sessions, 111 flagged, flag threshold 35.5. The run was repeated the same day after the fix that lets a session join its user's normal behavior only after it has ended, because 40 of the 246 SPEDIA sessions overlap another session of the same user. Test part results:</p>
+<table><colgroup><col style="width:40%"><col style="width:20%"><col style="width:20%"><col style="width:20%"></colgroup><thead><tr><th>Method</th><th>Precision</th><th>Recall</th><th>F1</th></tr></thead><tbody><tr><td>Combined risk score</td><td>0.94</td><td>0.94</td><td>0.94</td></tr><tr><td>XGBoost</td><td>0.97</td><td>0.97</td><td>0.97</td></tr><tr><td>Logistic Regression</td><td>0.92</td><td>0.75</td><td>0.83</td></tr><tr><td>Isolation Forest</td><td>0.64</td><td>1.00</td><td>0.78</td></tr><tr><td>No skill: flag every session</td><td>0.64</td><td>1.00</td><td>0.78</td></tr></tbody></table>
+<p>Flagging every test session already gives F1 0.78, because 64% of the test sessions are malicious. These values show that the chain works on SPEDIA, not how well it would find insiders in a company.</p>
+
+<h2>8. One session from raw rows to features</h2>
+<p>Session S0000240 on host internal-server_296075f5d771..., in the test part. Its first raw SPEDIA rows (user name hidden):</p>
+<pre>Timestamp,User,Action,Detail,Anomaly
+2025-03-30 16:32:07.000,[user],File accessed,J4X17WG8.doc,1
+2025-03-30 16:32:20.000,[user],File accessed,064MC9T8.zip,1
+2025-03-30 16:32:32.000,[user],URL accedida,http://twitpic.com/Elvis_Presley/graceland/bylzc,1
+2025-03-30 16:32:45.000,[user],File accessed,AWDA13LT.doc,1
+2025-03-30 16:32:54.000,[user],File accessed,K8M0G62P.jpg,1</pre>
+<p>What preprocessing made of it: one session of 16 minutes from 16:32 to 16:48 on 30 March 2025, made from 38 raw events with no break of 30 minutes. It holds 2 drive connection(s), 12 file event(s), 12 email(s), 8 of them outside the company, and 10 web visit(s). It is labelled malicious because 38 of its raw events are marked as anomalies. Compared with the same user&#x27;s earlier sessions, the emails sent are -1.4 and the drive connections -0.5 standard deviations from the usual value.</p>
+
+<h2>9. Compression</h2>
+<table><colgroup><col style="width:34%"><col style="width:14%"><col style="width:14%"><col style="width:38%"></colgroup><thead><tr><th>Data</th><th>Before</th><th>After</th><th>Input check and preprocessing time</th></tr></thead><tbody><tr><td>Generated sample (cert_synthetic)</td><td>9.4 MB</td><td>2.9 MB</td><td>0.53 s, then 0.55 s</td></tr><tr><td>SPEDIA in CERT layout</td><td>7.8 MB</td><td>1.5 MB</td><td>0.3 s, then 0.31 s</td></tr><tr><td>SPEDIA source file</td><td>45.7 MB</td><td>7.7 MB</td><td>Read only by the converter</td></tr></tbody></table>
+<p>Data files: 12.1 MB instead of 62.9 MB. The engine reads .csv and .csv.gz files alike, and a test checks that both give the same sessions.</p>
+
+<h2>10. Limits</h2>
+<ul>
+<li>The dataset is small (10 users, 246 sessions) and nearly half malicious, so its results cannot be compared with CERT results.</li>
+<li>Shell commands, where much of the real participants' attack activity is, are not used, because the CERT layout has no file for them.</li>
+<li>The dashboard screenshots and docs/DEMO.md still show the earlier generated data.</li>
+</ul>
+<p class="meta">To repeat, in backend: python -m itd.spedia --csv data/spedia/download/logs_SPEDIA_annotated_en.csv.xz --map spedia_mapping.json --out data/spedia_cert, python scripts/prepare_split.py data/spedia_cert data/spedia/prepared, and python -m itd.engine --data data/spedia_cert --retrain.</p>
+</body></html>

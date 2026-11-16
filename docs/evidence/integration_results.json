@@ -1,0 +1,87 @@
+{
+  "run_at": "2026-11-16 18:14",
+  "passed": 10,
+  "total": 10,
+  "cases": [
+    {
+      "id": "IT1",
+      "name": "Start-up: health check, database, dashboard",
+      "expected": "All answer, each within 2 seconds",
+      "observed": "health 200 in 1 ms ({'status': 'ok', 'database': 'up'}), dashboard 200 in 4 ms",
+      "passed": true,
+      "seconds": 0.01
+    },
+    {
+      "id": "IT2",
+      "name": "Administrator starts a run with new models, the worker finishes it",
+      "expected": "Done, results and models stored, flagged list filled",
+      "observed": "status done, 3,244 sessions stored, 49 flagged, test precision 1.00, recall 1.00, F1 1.00",
+      "passed": true,
+      "seconds": 4.65
+    },
+    {
+      "id": "IT3",
+      "name": "Analyst workflow: list, session, assistant, user page, report",
+      "expected": "Every step works and is logged",
+      "observed": "task completion 6 of 6 steps (all worked), log entries {'session_viewed': 1, 'assistant_question': 1, 'user_viewed': 1, 'report_viewed': 1}",
+      "passed": true,
+      "seconds": 0.03
+    },
+    {
+      "id": "IT4",
+      "name": "Access control (the login throttle is checked last, in IT4b)",
+      "expected": "403, 401, 401 and 426",
+      "observed": "{'analyst asks for a run': 403, 'no token': 401, 'expired token': 401, 'plain HTTP when HTTPS is required': 426}",
+      "passed": true,
+      "seconds": 0.01
+    },
+    {
+      "id": "IT5",
+      "name": "Bad input: missing file, missing column, wrong date, repeated ids and labels without an event",
+      "expected": "Runs stop with V1, V2 and V3, the warnings run finishes",
+      "observed": "{'bad_no_device': ('failed', True), 'bad_column': ('failed', True), 'bad_date': ('failed', True), 'warn_duplicates': ('done', True)}, results kept after the failed runs: True",
+      "passed": true,
+      "seconds": 12.39
+    },
+    {
+      "id": "IT6",
+      "name": "Session edges: 12-hour cap, events outside sessions, overlapping sessions",
+      "expected": "Cap at 21:00, outside events dropped, the overlapping session not compared with the open one",
+      "observed": "{'run done': True, '12-hour cap': True, 'only the in-session web visit counted': True, 'overlap not in the baseline': True}",
+      "passed": true,
+      "seconds": 3.3
+    },
+    {
+      "id": "IT7",
+      "name": "Reliability: same data again, worker stopped during a run, MongoDB stopped",
+      "expected": "Same scores, the stopped run is marked failed, 503 with a clear message and recovery",
+      "observed": "{'same scores without retraining': True, 'stopped worker: shown as running, then failed': True, 'database stopped: 503, then back': True, 'worker still running after the outage': True}, message while down: 'The database is not reachable. Start MongoDB and try again.'",
+      "passed": true,
+      "seconds": 16.89
+    },
+    {
+      "id": "IT8",
+      "name": "SPEDIA through the whole chain",
+      "expected": "The run finishes and results are stored",
+      "observed": "status done, 246 sessions, test precision 0.94, recall 0.94, F1 0.94",
+      "passed": true,
+      "seconds": 3.51
+    },
+    {
+      "id": "IT9",
+      "name": "Speed: API response times (30 calls each) and page load in a browser",
+      "expected": "Under 2 seconds (NF3)",
+      "observed": "{'list': 'median 4.9 ms, p95 9.8 ms', 'detail': 'median 2.7 ms, p95 3.0 ms', 'user history': 'median 5.2 ms, p95 6.1 ms', 'latest run': 'median 1.7 ms, p95 2.1 ms', 'offline chat': 'median 2.0 ms, p95 2.6 ms'}, slowest 10 ms, page load {'login_page_ms': 657, 'flagged_list_ms': 222}",
+      "passed": true,
+      "seconds": 2.03
+    },
+    {
+      "id": "IT4b",
+      "name": "Login throttle: wrong password five times",
+      "expected": "Five 401 answers, then 429",
+      "observed": "five wrong passwords [401, 401, 401, 401, 401], then 429",
+      "passed": true,
+      "seconds": 0.86
+    }
+  ]
+}

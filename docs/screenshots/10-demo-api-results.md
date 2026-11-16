@@ -1,61 +1,222 @@
-# Insider Threat Detection --- API Demo Results
+# API demo results
 
-**Command**
+Real output of `python scripts/demo_api.py --user alice --password ********` on a copy of the main database (SPEDIA), 16 November 2026.
 
-``` powershell
-python scripts\demo_api.py --user alice --password $pw
 ```
+1. Login with a wrong password (expect 401)
+   -> HTTP 401
+   {
+  "detail": "Wrong username or password"
+}
 
-**Result:** Completed successfully. All 13 API tests returned the
-expected HTTP status codes.
+2. Session list without a token (expect 401)
+   -> HTTP 401
+   {
+  "detail": "Login required"
+}
 
-## Test results
+3. Login with an injection attempt (expect 422)
+   -> HTTP 422
+   {
+  "detail": [
+    {
+      "type": "string_type",
+      "loc": [
+        "body",
+        "username"
+      ],
+      "msg": "Input should be a valid string",
+      "input": {
+        "$ne": ""
+      }
+    },
+    {
+      "type": "string_type",
+      "loc": [
+        "body",
+        "password"
+      ],
+      "msg": "Input should be a valid string",
+      "input": {
+        "$ne": ""
+      }
+    }
+  ]
+}
 
-    \# Test                                             Expected   Actual Result
-  ---- ---------------------------------------------- ---------- -------- --------
-     1 Login with a wrong password                           401      401 PASS
-     2 Session list without a token                          401      401 PASS
-     3 Login with an injection attempt                       422      422 PASS
-     4 Login with the correct password                       200      200 PASS
-     5 List flagged sessions, highest risk first             200      200 PASS
-     6 View session details for `S0002352`                   200      200 PASS
-     7 View user history for `U0073`                         200      200 PASS
-     8 View latest batch run                                 200      200 PASS
-     9 Ask the assistant about a session                     200      200 PASS
-    10 Invalid user ID format                                422      422 PASS
-    11 Invalid session ID format                             422      422 PASS
-    12 Request a session that does not exist                 404      404 PASS
-    13 Submit a question longer than 300 characters          422      422 PASS
+4. Login with the right password (expect 200 and a token)
+   -> HTTP 200
+   {
+  "username": "alice",
+  "expires_minutes": 30
+}
 
-## Key results
+5. Flagged sessions, highest risk first (limit 3)
+   -> HTTP 200
+   {
+  "threshold": 35.5,
+  "total": 111,
+  "scored": 246,
+  "high": 101,
+  "sessions": [
+    {
+      "session_id": "S0000130",
+      "user": "irene",
+      "pc": "public-host_3e100f80a765d58cccb17ac23f57d42d14742813",
+      "start": "2025-03-23T20:19:18",
+      "end": "2025-03-24T08:19:18",
+      "risk_score": 95.8
+    },
+    {
+      "session_id": "S0000222",
+      "user": "irene",
+      "pc": "public-host_ebae3dba5531378dd1976b870f2462ea37133233",
+      "start": "2025-03-30T08:56:42",
+      "end": "2025-03-30T14:07:06",
+      "risk_score": 95.3
+    },
+    {
+      "session_id": "S0000223",
+      "user": "irene",
+      "pc": "public-host_2afe5f272bfdd1eedec37b148a1b8fe62b160e75",
+      "start":
 
--   Database connection check: passed.
--   Sessions stored: **7,329**.
--   Flagged sessions: **70**.
--   Risk threshold: **8.2**.
--   Highest-risk example: session `S0002352`, with a risk score of
-    **95.3**.
--   The assistant returned an explanation based on stored evidence using
-    template mode; no language model was used for this response.
--   The demo finished with:
-    `Done. Check the access_log collection for the login, view and question entries.`
+6. Session detail for S0000130
+   -> HTTP 200
+   {
+  "session_id": "S0000130",
+  "risk_score": 95.8,
+  "threshold": 35.5,
+  "model_scores": {
+    "lr": 0.9873,
+    "xgb": 0.9755,
+    "iforest": 0.8797
+  },
+  "top_shap": [
+    {
+      "feature": "events_per_hour",
+      "value": 212.583,
+      "shap": 4.6227,
+      "strength": "strong",
+      "text": "Activity rate was 212.6 events per hour."
+    },
+    {
+      "feature": "logon_hour",
+      "value": 20.317,
+      "shap": 0.516,
+      "strength": "minor",
+      "text": "Logged on at 20.3h (usual 11.7h)."
+    },
+    {
+      "feature": "n_distinct_pcs_day",
+      "value": 4.0,
+      "shap": 0.381,
+      "strength": "minor",
+      "text": "Used 4 different PCs that day, up to this session."
+  
 
-## Security checks demonstrated
+7. User history for irene (workflow 2)
+   -> HTTP 200
+   {
+  "user": "irene",
+  "summary": {
+    "sessions": 97,
+    "flagged": 39,
+    "highest_risk": 95.8,
+    "shown": 97
+  },
+  "baseline": [
+    {
+      "metric": "logon_hour",
+      "label": "Usual logon hour",
+      "mean": 12.45,
+      "std": 5.01
+    },
+    {
+      "metric": "duration_min",
+      "label": "Usual session length (minutes)",
+      "mean": 181.93,
+      "std": 165.45
+    },
+    {
+      "metric": "n_device_connect",
+      "label": "Removable devices per session",
+      "mean": 12.91,
+      "std": 35.68
+    },
+    {
+      "metric": "n_distinct_urls",
+      "label": "Web pages per session",
+      "mean": 59.71,
+      "std": 89.79
+    },
+    {
+      "metric": "n_file_events",
+     
 
--   Invalid credentials are rejected with HTTP `401`.
--   Requests without authentication are rejected with HTTP `401`.
--   Injection-shaped input and malformed identifiers are rejected with
-    HTTP `422`.
--   Requests for nonexistent sessions return HTTP `404`.
--   Overlong questions are rejected with HTTP `422`.
+8. Latest batch run
+   -> HTTP 200
+   {
+  "at": "2026-11-16T14:10:42.805003+00:00",
+  "seconds": 0.4,
+  "sessions": 246,
+  "flagged": 111,
+  "threshold": 35.5,
+  "weights": {
+    "lr": 0.38937023226627665,
+    "xgb": 0.38456915939242076,
+    "iforest": 0.22606060834130257
+  }
+}
 
-## Screenshot evidence
+9. Ask the assistant
+   -> HTTP 200
+   {
+  "answer": "The session scored 96 out of 100, which is above the flag threshold. Main reasons: Activity rate was 212.6 events per hour. Compared with this user's normal: Connected 102 removable device(s) (usual 3.2), which is 10 or more standard deviations above this user's normal. (Offline summary of the stored evidence; no language model was used.)",
+  "fields_used": [
+    "R",
+    "B1",
+    "S1"
+  ],
+  "mode": "template"
+}
 
-Save the terminal screenshots in `docs/screenshots/`:
+10. User id with a bad format (expect 422)
+   -> HTTP 422
+   {
+  "detail": "Invalid user id"
+}
 
--   `01-connection-check.png` --- successful database, API, and
-    dashboard connection checks.
--   `10-demo-api-part1.png` --- API demo calls 1--6.
--   `10-demo-api-part2.png` --- API demo calls 7--13.
+11. Session id with a bad format (expect 422)
+   -> HTTP 422
+   {
+  "detail": "Invalid session id"
+}
 
-Refreshed on 1 November 2026 after the main database was rebuilt with `--retrain` (calibrated scores; the first version of this file described the run before calibration: 66 flagged, threshold 19.3).
+12. Session that does not exist (expect 404)
+   -> HTTP 404
+   {
+  "detail": "Session not found"
+}
+
+13. Question over 300 characters (expect 422)
+   -> HTTP 422
+   {
+  "detail": [
+    {
+      "type": "string_too_long",
+      "loc": [
+        "body",
+        "question"
+      ],
+      "msg": "String should have at most 300 characters",
+      "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "ctx": {
+        "max_length": 300
+      }
+    }
+  ]
+}
+
+Done. Check the access_log collection for the login, view and question entries.
+```

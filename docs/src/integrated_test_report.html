@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Integrated Test Report</title>
+<!-- Source of docs/INTEGRATED_TEST_REPORT.pdf. Numbers copied from backend/reports/integration/results.json (copy in docs/evidence/integration_results.json). -->
+<style>
+@page { size: A4; margin: 12mm; }
+* { box-sizing: border-box; }
+body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 9.2pt; line-height: 1.28; color: #000; background: #fff; margin: 0; }
+h1 { font-size: 17pt; margin: 0 0 5pt; }
+h2 { font-size: 12.2pt; margin: 10pt 0 4pt; break-after: avoid; page-break-after: avoid; }
+p { margin: 0 0 5pt; }
+.lead { font-size: 10.3pt; }
+.meta { color: #333; font-size: 8.8pt; }
+ul { margin: 0 0 5pt 15pt; padding: 0; }
+li { margin: 0 0 2.5pt; }
+table { width: 100%; border-collapse: collapse; font-size: 8.3pt; margin: 0 0 4pt; }
+thead { display: table-header-group; }
+tr { break-inside: avoid; page-break-inside: avoid; }
+th { background: #000; color: #fff; text-align: left; font-weight: 600; padding: 2.5pt 4pt; border: 0.6pt solid #000; }
+td { border: 0.6pt solid #888; padding: 2.5pt 4pt; vertical-align: top; }
+</style>
+</head>
+<body>
+
+<h1>Integrated Test Report</h1>
+<p class="lead">This report shows whether all parts of the prototype work together: the log files, the detection engine, the run worker, MongoDB, the API and the dashboard in a browser. It lists each test case with its result, the problems found with the corrective actions, and what was not checked.</p>
+<p class="meta">Insider Threat Detection prototype, ITE499A Capstone Project A, Group 7. Test run on 16 November 2026. Plan: docs/INTEGRATED_TESTING_PLAN.pdf. Result: 10 of 10 cases passed.</p>
+
+<h2>1. How the test was run</h2>
+<p>One command, <code>python scripts/integration_test.py</code> in the backend folder, starts every part and runs all cases in a fixed order. It uses the real MongoDB 7 server with a separate scratch database (itd_integration), so the main database is not touched, and the scratch database is deleted at the end. The parts started are the API, a second API that requires HTTPS, the run worker, the dashboard and a headless Chrome browser. Three kinds of data are used: generated data in the CERT layout (60 users, 80 days, 8 insiders), the SPEDIA prototype dataset (246 sessions), and five small hand-made folders with faults or edge cases. Each case compares what happened with what should happen and saves both in a results file.</p>
+
+<h2>2. Results</h2>
+<table>
+<colgroup><col style="width:6%"><col style="width:24%"><col style="width:22%"><col style="width:40%"><col style="width:8%"></colgroup>
+<thead><tr><th>ID</th><th>What was checked</th><th>Expected</th><th>Observed</th><th>Result</th></tr></thead>
+<tbody>
+<tr><td>IT1</td><td>Start-up: health check, database, dashboard</td><td>All answer within 2 seconds</td><td>Health check 200 in 1 ms with the database up, dashboard 200 in 4 ms.</td><td>Passed</td></tr>
+<tr><td>IT2</td><td>An administrator starts a run with new models and the worker finishes it</td><td>Run done, results and models stored</td><td>Run done, 3,244 sessions stored, 49 flagged. Test part precision, recall and F1 1.00 on generated data.</td><td>Passed</td></tr>
+<tr><td>IT3</td><td>Analyst workflow: list, session, assistant, user page, report</td><td>Every step works and is logged</td><td>6 of 6 steps worked. One access-log entry each for the session view, the question, the user view and the report.</td><td>Passed</td></tr>
+<tr><td>IT4</td><td>Access control</td><td>403, 401, 401 and 426</td><td>Analyst asking for a run 403, no token 401, expired token 401, plain HTTP when HTTPS is required 426.</td><td>Passed</td></tr>
+<tr><td>IT5</td><td>Bad input: missing file, missing column, wrong date, repeated ids</td><td>Faulty runs stop with a clear rule, the warnings run finishes</td><td>The three faulty runs failed with the matching rule (V1, V2, V3), the run with repeated ids finished with warnings, and the stored results were kept after the failed runs.</td><td>Passed</td></tr>
+<tr><td>IT6</td><td>Session edges: 12-hour cap, events outside sessions, overlapping sessions</td><td>Cap at 21:00, outside events dropped, overlap kept out of the baseline</td><td>A session with no logoff ended at 21:00, only the web visit inside the session was counted, and a session that overlaps another was not compared with the unfinished one.</td><td>Passed</td></tr>
+<tr><td>IT7</td><td>Reliability: same data again, worker stopped during a run, MongoDB stopped</td><td>Same scores, stopped run marked failed, clear message and recovery</td><td>Same scores without retraining. The stopped run showed as running, then failed. With MongoDB stopped the API answered 503 "The database is not reachable. Start MongoDB and try again." and recovered after the restart. The worker kept running.</td><td>Passed</td></tr>
+<tr><td>IT8</td><td>SPEDIA through the whole chain</td><td>The run finishes and results are stored</td><td>Run done, 246 sessions. Test part precision, recall and F1 0.94.</td><td>Passed</td></tr>
+<tr><td>IT9</td><td>Speed: API response times (30 calls each) and page load in a browser</td><td>Under 2 seconds</td><td>API medians 1.7 to 5.2 ms, slowest call 10 ms. Sign-in page loaded in 657 ms, flagged list in 222 ms.</td><td>Passed</td></tr>
+<tr><td>IT4b</td><td>Login throttle (run last because it locks the address)</td><td>Five 401 answers, then 429</td><td>Five wrong passwords gave 401, the sixth attempt 429.</td><td>Passed</td></tr>
+</tbody>
+</table>
+<p>The precision, recall and F1 values only show that the chain works. Generated data is easy to separate, and in SPEDIA 64% of the test sessions are malicious, so flagging every session already gives F1 0.78. They are not research results.</p>
+
+<h2>3. Problems found and corrective actions</h2>
+<table>
+<colgroup><col style="width:5%"><col style="width:40%"><col style="width:40%"><col style="width:15%"></colgroup>
+<thead><tr><th>No.</th><th>Problem</th><th>Corrective action</th><th>Checked by</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>A session that started while another session of the same user was still open was compared with that unfinished session. 40 of the 246 SPEDIA sessions overlap another one.</td><td>A session now joins the user's normal behavior only after it has ended. SPEDIA was run again (flag threshold 35.5).</td><td>IT6 and a unit test</td></tr>
+<tr><td>2</td><td>The run worker stopped for good when MongoDB could not be reached (found while preparing IT7).</td><td>The worker now waits and tries again until the database is back.</td><td>IT7 and a unit test</td></tr>
+<tr><td>3</td><td>A run request could be stored even if its access-log entry could not be written.</td><td>The log entry is now written first, so no run is stored without one.</td><td>Unit test</td></tr>
+<tr><td>4</td><td>On SPEDIA, two sessions of the same user that start in the same minute looked like duplicates, because the dashboard did not show the computer.</td><td>The computer is now shown in the flagged list, on the session page and on the user page. Long computer names are shortened, and the full name appears on hover.</td><td>Screenshots of 16 November 2026</td></tr>
+<tr><td>5</td><td>The first runs failed because of the test script itself: the dashboard listened on a different address, the edge check read values the results do not store, and the browser library did not load.</td><td>The script was corrected. These were not faults of the prototype.</td><td>Later runs</td></tr>
+</tbody>
+</table>
+<p>After these corrections all 10 cases passed in three complete runs on 16 November 2026, the last after the dashboard change and a stricter results-kept check in IT5. The automated tests also pass (91 passed, 1 skipped).</p>
+
+<h2>4. What was not checked</h2>
+<ul>
+<li>HTTPS in a real browser with a certificate. IT4 only checks that plain HTTP is refused.</li>
+<li>The secure MongoDB set-up with separate accounts for the engine and the API.</li>
+<li>The hosted language model with a real key. The assistant answered from its offline template.</li>
+<li>The original CERT r4.2 data. Only generated data and SPEDIA were used.</li>
+<li>Many users at the same time, browsers other than Chrome, and phone-size screens.</li>
+<li>Speed on other machines. All times were measured on one laptop with small data.</li>
+</ul>
+<p class="meta">Evidence: docs/evidence/integration_results.json (expected and observed values of every case), docs/screenshots/ (dashboard on SPEDIA), backend/scripts/integration_test.py (the test itself).</p>
+
+</body>
+</html>

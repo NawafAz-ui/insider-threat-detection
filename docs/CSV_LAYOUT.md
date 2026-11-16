@@ -1,7 +1,7 @@
 # CSV layout (based on CERT r4.2)
 
 Put these files in one folder and pass it to `python -m itd.engine --data <folder>`.
-Dates are `MM/DD/YYYY HH:MM:SS`. Extra columns are ignored.
+Dates are `MM/DD/YYYY HH:MM:SS`. Extra columns are ignored. Each file may also be stored gzip-compressed as `name.csv.gz`.
 
 | File | Columns used |
 |---|---|
@@ -15,4 +15,4 @@ Dates are `MM/DD/YYYY HH:MM:SS`. Extra columns are ignored.
 Build `answers.csv` from the CERT answer files: `python scripts/build_answers.py <answers-folder> <dataset-folder>`.
 Sample data in this layout: `python scripts/generate_synthetic_cert.py data/cert_synthetic`.
 
-SPEDIA is a single CSV: convert it with `python -m itd.spedia` (see `spedia_mapping.example.json`).
+SPEDIA is a single CSV: convert it with `python -m itd.spedia` (see `spedia_mapping.example.json`); the checked mapping for the Zenodo file is `spedia_mapping.json`.

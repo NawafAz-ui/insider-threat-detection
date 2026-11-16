@@ -1,23 +1,30 @@
 # Screenshots
 
-Evidence for the prototype demonstration, refreshed on 1 November 2026 after the main database was rebuilt (screenshots 2 and 9 do not depend on the data and were not retaken). The steps are in `docs/DEMO.md`.
+Evidence for the prototype demonstration, retaken on 16 November 2026 on SPEDIA (246 sessions, 111 flagged, flag threshold 35.5) from a copy of the main database with `docs/src/demo_screenshots.py`. Screenshots 2, 9 and 12 do not depend on the data and were not retaken. The steps are in `docs/DEMO.md`.
+
+## Workflow 0: start a batch run from the dashboard
+- `14-admin-run-panel.png`: the administrator's Run analysis card above the flagged list
+- `15-run-requested.png`: the request filed, waiting for the worker
+- `16-run-finished.png`: the run finished, the engine log, and the list reloaded with the new run
+- `17-run-report.png`: the downloaded run report
 
 ## Workflow 1: review a flagged session
 - `02-signin-validation.png`: sign-in form validation
-- `03-flagged-list.png`: flagged sessions with the summary cards and the last batch run
-- `04-session-detail.png`: risk score and the reasons behind it
+- `03-flagged-list.png`: flagged sessions with the summary cards, the last batch run, user and computer
+- `04-session-detail.png`: risk score, the computer and the reasons behind the score
 - `05-assistant-why-flagged.png`: the assistant's short answer, with the evidence it used
-- `05b-assistant-zip-question.png`: a focused question gets only the matching evidence
+- `05b-assistant-focused-question.png`: a focused question gets only the matching evidence (questions in `questions.txt`)
 
 ## Workflow 2: investigate a user
-- `06-user-page-U0073.png`: one user's session history
-- `07-risk-timeline-U0073.png`: risk over time with the flag threshold
-- `08-user-tables-U0073.png`: what is normal for the user, and their flagged sessions
-- `08b-user-page-U0080.png` and `08c-risk-timeline-U0080.png`: the same page for a second user
+- `06-user-page.png`: one user's session history
+- `07-risk-timeline.png`: risk over time with the flag threshold
+- `08-user-tables.png`: what is normal for the user, and their flagged sessions
 
 ## Error handling, database and tests
+- `01-connection-check.png`: every connection checked
 - `09-database-down.png`: clear message when MongoDB is stopped
+- `10-demo-api-results.md`: every API call with its status code
 - `12-demo-schema.png`: MongoDB rejects invalid documents (code 121)
-- `13-tests-and-schema-check.png`: 42 automated tests pass, and every stored document follows the database rules
+- `13-tests-and-schema-check.png`: the automated tests pass, and every stored document follows the database rules
 
-The data is synthetic sample data in the CERT r4.2 file layout, so the scores are not research results.
+SPEDIA is used for prototype purposes. These scores are not research results.

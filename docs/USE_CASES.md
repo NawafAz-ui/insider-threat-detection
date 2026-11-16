@@ -129,7 +129,7 @@ Rules in the code: `security.py` (`current_user`, `require_analyst`), `api.py`, 
 Notes:
 - Analyst and admin have the same rights on the API. No endpoint is admin-only. Administration is done on the command line (UC8 to UC12). A user-administration screen is out of scope.
 - The database allows only the roles analyst and admin, so "any other role" can only occur with a forged or old token.
-- The API writes only to `access_log` (`login_ok`, `login_failed`, `session_viewed`, `user_viewed`, `assistant_question`). Results, baselines, models and runs are written by the engine only.
+- The API writes only to `access_log` (`login_ok`, `login_failed`, `session_viewed`, `user_viewed`, `assistant_question`, `run_requested`, `report_viewed`) and `run_requests` (an admin's request for a batch run, carried out by the worker). Results, baselines, models and runs are written by the engine only.
 - With the secure database set-up (`docker-compose.secure.yml`, `docs/SECURITY.md`), the API account is also denied writes outside the access log at the database level. In the default development set-up this separation is not enforced.
 - Other controls: 30-minute token, strict request models, session and user ids limited to a fixed pattern, login throttling, HTTPS when `REQUIRE_HTTPS=1`.
 - Development defaults to change before any real use: `JWT_SECRET` has a built-in value (`config.py`), and HTTPS is off by default.

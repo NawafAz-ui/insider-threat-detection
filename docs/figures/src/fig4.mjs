@@ -1,8 +1,9 @@
 import fs from "fs";
 import { Diagram } from "./dfdlib.mjs";
 
-const d = new Diagram(660, 618);
-d.boundary(125, 16, 535, 602, "Insider Threat Detection System");
+const W = 660, H = 742;
+const d = new Diagram(W, H);
+d.boundary(125, 16, 535, 712, "Insider Threat Detection System");
 
 const OW = 172, OH = 50, L = 230, R = 430;
 const uc = {};
@@ -14,30 +15,38 @@ place("UC4", L, 232, ["UC4 Ask the", "assistant"]);
 place("UC3", L, 318, ["UC3 Open session", "detail"]);
 place("UC5", L, 404, ["UC5 Investigate", "a user"]);
 place("UC6", L, 478, ["UC6 View latest", "batch run"]);
-place("UC7", L, 544, ["UC7", "Sign out"]);
+place("UC14", L, 544, ["UC14 Follow", "a run"]);
+place("UC15", L, 610, ["UC15 Download", "the run report"]);
+place("UC7", L, 676, ["UC7", "Sign out"]);
 // administrator use cases
+place("UC13", R, 256, ["UC13 Start a run", "from the dashboard"]);
 place("UC8", R, 318, ["UC8 Run the", "batch engine"]);
 place("UC9", R, 380, ["UC9 Manage analyst", "accounts"]);
 place("UC10", R, 442, ["UC10 Apply and check", "database rules"]);
 place("UC11", R, 504, ["UC11 Back up", "and restore"]);
-place("UC12", R, 566 - 0, ["UC12 Check", "system health"]);
+place("UC12", R, 566, ["UC12 Check", "system health"]);
 
 // actors outside the boundary
 const ax = 58, ay = 290;
 d.actor(ax, ay, ["Security", "analyst"]);
-const bx = 600, by = 420;
+const bx = 600, by = 400;
 d.actor(bx, by, ["Administrator"]);
-const mx = 600, my = 170;
+const mx = 600, my = 150;
 d.actor(mx, my, ["Hosted language", "model (optional)"]);
 
 // associations: plain lines without arrowheads, from the actor to the near tip of the use case
-const from = (x, y) => [x, y];
-for (const id of ["UC1", "UC2", "UC4", "UC3", "UC5", "UC6", "UC7"]) d.line([ax + 14, ay + 38], [uc[id].cx - uc[id].a, uc[id].cy]);
-for (const id of ["UC8", "UC9", "UC10", "UC11", "UC12"]) d.line([bx - 14, by + 38], [uc[id].cx + uc[id].a, uc[id].cy]);
+for (const id of ["UC1", "UC2", "UC4", "UC3", "UC5", "UC6", "UC14", "UC15", "UC7"]) d.line([ax + 14, ay + 38], [uc[id].cx - uc[id].a, uc[id].cy]);
+for (const id of ["UC13", "UC8", "UC9", "UC10", "UC11", "UC12"]) d.line([bx - 14, by + 38], [uc[id].cx + uc[id].a, uc[id].cy]);
 d.line([mx - 14, my + 38], [uc.UC4.cx + uc.UC4.a, uc.UC4.cy]);
 
 // extend: dashed arrow from the extending use case to the use case it extends
 const gap = OH / 2;
 d.dashed([[L, uc.UC4.cy + gap], [L, uc.UC3.cy - gap]], { label: ["«extend»"], lx: L + 8, ly: (uc.UC4.cy + uc.UC3.cy) / 2 + 4, anchor: "start" });
+
+// generalization: the administrator is a special analyst (same dashboard rights, plus UC8 to UC13);
+// solid line with a hollow triangle at the general actor, drawn below the system boundary
+const yg = 727, tip = ay + 106;
+d.add(`<polyline points="${bx},${by + 92} ${bx},${yg} ${ax},${yg} ${ax},${tip + 13}" fill="none" stroke="#000" stroke-width="1.2"/>`);
+d.add(`<polygon points="${ax},${tip} ${ax - 7.5},${tip + 13} ${ax + 7.5},${tip + 13}" fill="#fff" stroke="#000" stroke-width="1.2"/>`);
 
 fs.writeFileSync(process.argv[2], d.svg());

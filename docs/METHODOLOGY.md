@@ -35,7 +35,7 @@ flowchart TB
 
 Two flows share the stored results:
 - Batch flow (steps 1 to 7): an operator runs `python -m itd.engine`. Only the engine writes results, baselines, models and run records.
-- Analyst flow (steps 8 to 10): the analyst signs in and reads stored results. The API writes only the access log.
+- Analyst flow (steps 8 to 10): the analyst signs in and reads stored results. The API writes only the access log and run requests.
 
 ## 3. Processing stages
 

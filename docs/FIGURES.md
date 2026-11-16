@@ -23,3 +23,6 @@ An independent reviewer read the code and checked every element of the first ver
 - Figures 1 to 5: `node src/figN.mjs out.svg`, then `node src/svg2png.mjs out.svg out.png 3` (needs Node and Google Chrome). The shared shapes are in `src/dfdlib.mjs`; `src/fig1.mjs` draws its own package, component, document and database shapes.
 
 `docs/figures/` also holds older diagrams from the long version (`context-diagram.png`, `data-flow-level1.png`, `database-diagram.png`, `sequence-diagram.png`). The report does not use them.
+
+## Update of 9 November 2026
+All five figures were redrawn for the code merged on 7 November: Figure 1 adds the run worker, eleven endpoints and the run_requests collection; Figure 2 adds the dashboard run request and the run status; Figure 3 adds the run request and run status between the administrator and P3, and run requests in the flows of D1; Figure 4 adds UC13 to UC15 and shows the administrator as a special kind of analyst (generalization); Figure 5 adds the input check (0) with a flow final node for input errors. They are in the next version of the report (`Research & Methodology - Group 7 - 09.11.2026 Version.docx`) with their alternative text, and await the owner's review.

@@ -21,4 +21,4 @@
 Remaining limit of P1: a crash midway leaves a mix of old and new results until the next complete run.
 
 ## C. Check
-pytest -q: 42 passed, 1 skipped (real-MongoDB test).
+pytest -q: 74 passed, 1 skipped (real-MongoDB test).

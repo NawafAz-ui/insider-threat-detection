@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Report Changes 16.11.2026</title>
+<!-- Source of docs/REPORT_CHANGES_16_11.pdf -->
+<style>
+@page { size: A4; margin: 12mm; }
+* { box-sizing: border-box; }
+body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 9.2pt; line-height: 1.28; color: #000; background: #fff; margin: 0; }
+h1 { font-size: 17pt; margin: 0 0 5pt; }
+h2 { font-size: 12.2pt; margin: 10pt 0 4pt; break-after: avoid; page-break-after: avoid; }
+p { margin: 0 0 5pt; }
+.lead { font-size: 10.3pt; }
+.meta { color: #333; font-size: 8.8pt; }
+ul { margin: 0 0 5pt 15pt; padding: 0; }
+li { margin: 0 0 2.5pt; }
+table { width: 100%; border-collapse: collapse; font-size: 8.3pt; margin: 0 0 4pt; }
+thead { display: table-header-group; }
+tr { break-inside: avoid; page-break-inside: avoid; }
+th { background: #000; color: #fff; text-align: left; font-weight: 600; padding: 2.5pt 4pt; border: 0.6pt solid #000; }
+td { border: 0.6pt solid #888; padding: 2.5pt 4pt; vertical-align: top; }
+</style>
+</head>
+<body>
+
+<h1>Report Changes 16.11.2026</h1>
+<p class="lead">This page lists every change made to the Research and Methodology report: first the Milestone 5 work merged from Nawaf's branch, then SPEDIA as the prototype dataset and the split into a training and a test part only. Use it to check the yellow text in Word before humanizing it. It is an internal page, not for the supervisor.</p>
+<p class="meta">File: word-reports/Research &amp; Methodology - Group 7 - 16.11.2026 Version.docx, compared with the 09.11 Version. Every difference from the 09.11 version is yellow, small word edits too. The only exception is the white header row of the two new tables, because yellow behind white text cannot be read. Checks: the Word file passed the format check, the 75 semicolons already in the text are all kept, no new text has a semicolon, "we", "our" or a week, and the text grew from 10,402 to 12,287 words.</p>
+
+<h2>1. Changes by section</h2>
+<table>
+<colgroup><col style="width:9%"><col style="width:12%"><col style="width:52%"><col style="width:27%"></colgroup>
+<thead><tr><th>Section</th><th>Kind</th><th>Change</th><th>Task row it answers</th></tr></thead>
+<tbody>
+<tr><td>10.1</td><td>New paragraph</td><td>Why accuracy is not reported: only 1.2% to 1.5% of test sessions are malicious, so precision, recall, F1, average precision and alerts per 1,000 sessions are used.</td><td>Task table 1, research Day 4 (justify the metrics)</td></tr>
+<tr><td>10.2 table</td><td>New sentence</td><td>Batch run time and memory: peak memory at four data sizes, 233 MB for 3,660 sessions up to 464 MB for 29,329.</td><td>Task table 1, prototype Day 4</td></tr>
+<tr><td>10.2 table</td><td>New sentence</td><td>API response time: the HTTP measurement, 450 calls with no error, the slowest 25.4 ms.</td><td>Task table 1, prototype Day 4</td></tr>
+<tr><td>10.2 table</td><td>Small edits</td><td>"List 3.7 ..." became "In the same process: list 3.7 ...", and full stops were added after "3.8 ms" and "304 MiB".</td><td>Keeps your values next to the new ones</td></tr>
+<tr><td>10.2 text</td><td>New sentences</td><td>How the HTTP times were measured, and memory growth of about 0.9 GB per 100,000 sessions.</td><td>Task table 1, prototype Day 4</td></tr>
+<tr><td>10.2 text</td><td>Small edit</td><td>"Time and memory are for one run" became "The laptop time and memory are for one run".</td><td>Separates the laptop run from the four sizes</td></tr>
+<tr><td>10.3</td><td>Small edit and new sentence</td><td>"the five files" became "the test files", and a sentence points to the full test matrix (82 automated and 19 manual cases).</td><td>Task table 1, prototype Days 2 and 3</td></tr>
+<tr><td>10.3 TC2</td><td>Sentence changed</td><td>"... session across midnight. The 12-hour cap is not asserted." became "... the 12-hour cap and a session across midnight." The test now really checks the cap.</td><td>Task table 1, prototype Day 3</td></tr>
+<tr><td>10.3 table</td><td>New row</td><td>TC26: the assistant guard, 7 tests.</td><td>Task table 1, prototype Day 2</td></tr>
+<tr><td>10.4</td><td>New paragraph and table</td><td>Three failed checks and their corrective actions: the thief question, the 0.62 against 0.63 rounding, and the error 500 on a run request.</td><td>Task table 1 submission: test report with failed tests and corrective actions</td></tr>
+<tr><td>11</td><td>Sentence replaced</td><td>"This planned evaluation ... has not been performed." became the guard and its result: 120 of 300 answers without the guard, 300 of 300 with it, 190 of 230 new rewordings.</td><td>Task table 1, research Day 5 and prototype Day 5</td></tr>
+<tr><td>12.1</td><td>Small edits</td><td>"On 7 November 2026, ... 74 passed ... which passed the same day" became "On 16 November 2026, ... 86 passed ... which passed on 10 November 2026".</td><td>Current test result</td></tr>
+<tr><td>12.1 table</td><td>New rows</td><td>Issues 15 (memory growth), 16 (guard coverage 83%) and 17 (flag threshold 19.3, 8.1 and 8.2 in different runs).</td><td>Task table 1, research Day 5, and the threshold point of task table 2, research Day 1</td></tr>
+<tr><td>12.1</td><td>New paragraph</td><td>Points to the ranked list of twelve limitations in docs/evidence/Limitations_Analysis.pdf.</td><td>Task table 1, research Day 5</td></tr>
+<tr><td>13 table</td><td>New sentences</td><td>O6: 300 of 300 offline answers met their rule with the guard. O7: computing cost measured at four sizes.</td><td>Task table 1, research Day 6</td></tr>
+<tr><td>14</td><td>New section</td><td>Development and evaluation plan for Capstone B: work packages B1 to B9, each with a "done when" test, and six evaluation rules.</td><td>New research row "Evaluation plan and development plan missing", and the final submission plan</td></tr>
+</tbody>
+</table>
+
+<h2>2. Second round: SPEDIA and the two-part split</h2>
+<table>
+<colgroup><col style="width:16%"><col style="width:20%"><col style="width:64%"></colgroup>
+<thead><tr><th>Section</th><th>Kind</th><th>Change</th></tr></thead>
+<tbody>
+<tr><td>1, 8.1</td><td>Sentences changed</td><td>CERT r4.2 is named as the original dataset of the research, planned for Capstone B, and SPEDIA as the dataset used for prototype purposes.</td></tr>
+<tr><td>8.1</td><td>New paragraph</td><td>How SPEDIA was checked and converted: 45.7 MB, 72,250 events, 55,649 kept, sessions from 30-minute activity gaps, 246 sessions, 110 malicious.</td></tr>
+<tr><td>3, 4, 5.3, 8.2, 9.2, 9.3</td><td>Sentences and cells changed</td><td>The split is now 80% training and 20% test, with no validation part. Calibration, weights and thresholds come from five-fold cross-validation inside the training part (out-of-fold scores).</td></tr>
+<tr><td>10.1, 10.2</td><td>Values and sentences changed</td><td>All results on generated data computed again with the new split (for example combined F1 0.99, Logistic Regression 0.97, Isolation Forest 0.78, best rule 0.49). The second-computer comparison now refers to the old split.</td></tr>
+<tr><td>10.2</td><td>New paragraph</td><td>The first SPEDIA run: 196 training and 50 test sessions, combined F1 0.94, and F1 0.78 already from flagging every session.</td></tr>
+<tr><td>10.3</td><td>Sentences changed and new row</td><td>TC8 and TC24 describe the new tuning, and TC27 lists the data preparation tests.</td></tr>
+<tr><td>4, 12, 13, 14</td><td>Sentences changed</td><td>AC5 evidence, prototype status (main database rebuilt on SPEDIA, 87 tests), issues 8 and 17, objectives O3, O4 and O7, gap G2 and G3, and package B1 and the evaluation rule follow the new data and split.</td></tr>
+</tbody>
+</table>
+
+<h2>3. Third round: issue 14 fixed, new tests and the integrated test</h2>
+<table>
+<colgroup><col style="width:16%"><col style="width:20%"><col style="width:64%"></colgroup>
+<thead><tr><th>Section</th><th>Kind</th><th>Change</th></tr></thead>
+<tbody>
+<tr><td>4 (FR2, FR3)</td><td>Cells changed</td><td>The 12-hour cap, boundary events and overlapping sessions are now tested on hand-made data (TC2, TC28). Real logs are still missing, so both stay Partially Met.</td></tr>
+<tr><td>9.1, 12.1, 12.2</td><td>Sentences changed</td><td>Issue 14 is fixed: a session joins the user's baseline only after it has ended. The issue row says "Fixed on 16 November 2026", and 12.2 now describes the fix and its effect on SPEDIA (40 of 246 sessions overlap, threshold 35.2 to 35.5, flagged count and F1 unchanged).</td></tr>
+<tr><td>10.2, 12.1</td><td>Values changed</td><td>SPEDIA run after the fix: threshold 35.5, Logistic Regression F1 0.83 (was 0.85). Tests: 91 passed, 1 skipped.</td></tr>
+<tr><td>10.3</td><td>Cell changed and new row</td><td>TC23 now has 14 tests (no run stored without its log entry, worker waits out a database outage). New row TC28 for session edges and overlap.</td></tr>
+<tr><td>10.4</td><td>New paragraph</td><td>The integrated test: 10 of 10 cases passed, at most 10 ms per API call, flagged list loaded in 222 ms, and the four corrections made during the work.</td></tr>
+<tr><td>13, 14</td><td>Sentences changed</td><td>O1 (boundary events tested on hand-made data), O2 (overlap handled), O5 (page load timed once), gap G1 and the plan's first line follow the fix.</td></tr>
+</tbody>
+</table>
+
+<h2>4. Decisions to check</h2>
+<ul>
+<li>Section 14 brings back a Capstone B section, which was removed on 6 November. The new research task asks for it.</li>
+<li>The plan has no dates or owners, on purpose.</li>
+<li>Nawaf's estimate of about 2.25 million sessions and 20 GB for the full CERT r4.2 is left out. The real release gave 470,591 sessions when it was prepared on 15 November, so that estimate is too high.</li>
+<li>Package B1 now names only a CERT r4.2 sample, because SPEDIA already runs.</li>
+<li>The results on generated data are higher than before (F1 0.99 instead of 0.95). The models now learn from 80% of the sessions, are tuned on all of them by cross-validation, and are tested on a different window, so the old and new values are not directly comparable. Generated data is easy, so neither says much about real logs.</li>
+</ul>
+
+<h2>5. Code changes behind the report</h2>
+<p>backend/tests/test_pipeline.py: the session test now checks that a session without a logoff ends at 21:00, twelve hours after its 09:00 logon. It failed when the cap was lifted, so it really checks the cap. The engine now splits the data into training and test only and tunes on out-of-fold scores of the training part (itd/models.py, engine.py, rules.py, cross_eval.py and scripts/run_experiments.py), with a new test. The main database was backed up to backend/backups/2026-11-16_1647 and rebuilt on SPEDIA. All 87 tests pass and 1 is skipped, and the dashboard builds.</p>
+<p>Third round: itd/baselines.py adds a session to the baseline only after it has ended, itd/worker.py waits when the database is down, itd/jobs.py and api.py write the access-log entry before a run request is stored, and the dashboard shows the computer of each session. SPEDIA was run again after a backup to backend/backups/2026-11-16_1707. The integrated test is backend/scripts/integration_test.py, and its report is docs/INTEGRATED_TEST_REPORT.pdf. All 91 tests pass and 1 is skipped, and the dashboard builds.</p>
+
+</body>
+</html>

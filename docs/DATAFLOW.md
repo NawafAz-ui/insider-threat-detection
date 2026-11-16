@@ -20,11 +20,11 @@ Four parties are outside the system. Log sources supply the CSV files. The admin
 | P2 Features | Builds 28 session features, 10 deviations from the user’s own history and one recency feature. | Sessions, counts, saved baselines (D1) | 39 features per session; updated baselines to D1 |
 | P3 Score | Scores each session with three models, calibrates the scores, combines them and applies the flag threshold. | Features; saved models and settings (D1) | Scores from 0 to 1 per model, risk score from 0 to 100, flag; models and settings to D1 when training |
 | P4 Explain and store | Adds the SHAP reasons and baseline differences and writes everything to the database. | Scores, feature rows | Result per session, run record and metrics to D1 |
-| P5 Serve analysts | Checks the login, role and input of every request; reads stored data; writes only the access log. | Requests; results, baselines, runs, accounts (D1) | JSON answers; access-log entries to D1 |
+| P5 Serve analysts | Checks the login, role and input of every request; reads stored data; writes only the access log and run requests. | Requests; results, baselines, runs, accounts (D1) | JSON answers; access-log entries to D1 |
 | P6 Answer questions | Builds the evidence of one stored session and answers from the hosted model or a local template. | Stored session and question from P5; statements from the hosted model | Answer, evidence ids used, count of withheld statements |
 | P7 Dashboard | Shows four pages and builds the CSV download; calculates nothing. | JSON from P5 | Screens, CSV file of the sessions on screen |
 
-Three rules can be read from the diagram. Only P4 (the engine) writes results, baselines, models and runs. P5 writes only the access log. The hosted model receives only derived evidence and the question, never raw logs, user names or PC names.
+Three rules can be read from the diagram. Only P4 (the engine) writes results, baselines, models and runs. P5 writes only the access log and run requests. The hosted model receives only derived evidence and the question, never raw logs, user names or PC names.
 
 ## Component descriptions
 

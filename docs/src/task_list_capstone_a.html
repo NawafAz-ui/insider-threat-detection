@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Capstone A Task List</title>
+<!-- Source of docs/TASK_LIST_CAPSTONE_A.pdf. Rebuild: Chrome --headless --no-pdf-header-footer --print-to-pdf -->
+<style>
+@page { size: A4; margin: 11mm; }
+* { box-sizing: border-box; }
+body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 9.2pt; line-height: 1.28; color: #000; background: #fff; margin: 0; }
+h1 { font-size: 17pt; margin: 0 0 5pt; }
+h2 { font-size: 12.3pt; margin: 9pt 0 4pt; break-after: avoid; page-break-after: avoid; }
+h3 { font-size: 10pt; margin: 7pt 0 3pt; break-after: avoid; page-break-after: avoid; }
+p { margin: 0 0 5pt; }
+.lead { font-size: 10.4pt; }
+.meta { color: #333; font-size: 9pt; }
+ol { margin: 0 0 4pt 16pt; padding: 0; }
+li { margin: 0 0 3pt; }
+table { width: 100%; border-collapse: collapse; font-size: 8.3pt; margin: 0 0 4pt; }
+thead { display: table-header-group; }
+tr { break-inside: avoid; page-break-inside: avoid; }
+th { background: #000; color: #fff; text-align: left; font-weight: 600; padding: 2.5pt 4pt; border: 0.6pt solid #000; }
+td { border: 0.6pt solid #888; padding: 2.5pt 4pt; vertical-align: top; }
+td.c { text-align: center; }
+tr.todo td { background: #fff3a0; }
+</style>
+</head>
+<body>
+
+<h1>Capstone A Task List</h1>
+<p class="lead">This list turns the supervisor's two latest task tables into tasks for the prototype and the Research and Methodology report, which are the main focus. Literature review tasks are kept apart in Section 6. It is an internal list, not for the supervisor.</p>
+<p class="meta">Checked on 16 November 2026 against the branch november-1-tasks-fahim after Nawaf's branch docs/milestone-5-evaluation was merged into it, the report (word-reports/Research &amp; Methodology - Group 7 - 16.11.2026 Version.docx, updated for Milestone 5 and the prototype work on 16 November), the literature review (Literature_Review_Group7-Updated2.docx in Downloads) and the Capstone report (Capstone_report Fall26-27.docx in Downloads). "Milestone 5 PDFs" means the four files that branch added to docs/evidence: Test_Case_Matrix, Preliminary_Evaluation_Results, Limitations_Analysis and Refined_Methodology. Done means finished and checked. Partly done means part of it exists and the rest is named. Open means not started. Rows that are not done are highlighted.</p>
+
+<h2>1. What to do first</h2>
+<ol>
+<li>Review the yellow text in the 16.11 report (every change is listed in docs/REPORT_CHANGES_16_11.pdf) and humanize it.</li>
+<li>Write Sections IV to XII of the Capstone report. Only Sections I to III are written, and Section IV needs the IBM Design Thinking Training first.</li>
+<li>Add a database design table and a feasibility assessment to the report. The Milestone 5 PDFs already give the measured part (time and memory).</li>
+<li>Make the Capstone A presentation.</li>
+<li>Practise the live demonstration with docs/DEMO.md. It is prepared on SPEDIA, with screenshots of 16 November.</li>
+<li>Commit and push the branch november-1-tasks-fahim, then merge it into main. It is 15 commits ahead of its GitHub copy, holds Nawaf's Milestone 5 work too, and many changes are not committed.</li>
+</ol>
+
+<h2>2. Data: source, split and preprocessing</h2>
+<p>The prototype runs on SPEDIA since 16 November 2026 (docs/DATA_PREPARATION_SPEDIA.pdf). CERT r4.2 stays the original dataset of the research, planned for Capstone B, as the 16.11 report now says. The data is split into a training and a test part only. The Milestone 5 PDFs still say SPEDIA was only tried on a stand-in file, because this work is not pushed yet.</p>
+<table>
+<colgroup><col style="width:24%"><col style="width:11%"><col style="width:65%"></colgroup>
+<thead><tr><th>Task</th><th>Status</th><th>What is left</th></tr></thead>
+<tbody>
+<tr><td>Get a smaller dataset from a reputable source</td><td>Done</td><td>SPEDIA version 2 from Zenodo (DOI 10.5281/zenodo.15525713, licence CC BY 4.0, 45.7 MB). The published checksum matches.</td></tr>
+<tr><td>Put it in the prototype's file layout</td><td>Done</td><td>55,649 of 72,250 events fit the five CERT files. Shell commands, login records and events without a user are left out.</td></tr>
+<tr><td>Split the data into training and test parts</td><td>Done</td><td>Split by time into two parts only: 196 training and 50 test sessions, with 78 and 32 malicious sessions. Thresholds, calibration and weights come from five-fold cross-validation inside the training part.</td></tr>
+<tr><td>Run the preprocessing</td><td>Done</td><td>All files passed the input check and became 246 sessions with 39 features each.</td></tr>
+<tr><td>Keep proof of the preprocessing</td><td>Done</td><td>The data preparation report has the checksum, the conversion, the input check result, the split and one session traced from raw rows to features.</td></tr>
+<tr><td>Compress the data files</td><td>Done</td><td>12.1 MB instead of 62.9 MB. Reading them takes about 0.01 seconds longer and gives the same features.</td></tr>
+<tr><td>Connect the data to the prototype</td><td>Done</td><td>The main database was backed up and rebuilt on SPEDIA: 246 sessions, 111 flagged, test F1 0.94. It was run again after the overlap fix (flag threshold 35.5). The screenshots and docs/DEMO.md show SPEDIA.</td></tr>
+</tbody>
+</table>
+
+<h2>3. Task table 1: Literature Review Finalization, Prototype Validation and Performance Evaluation</h2>
+
+<h3>Research and methodology</h3>
+<table>
+<colgroup><col style="width:6%"><col style="width:28%"><col style="width:11%"><col style="width:55%"></colgroup>
+<thead><tr><th>Day</th><th>Task</th><th>Status</th><th>What is left</th></tr></thead>
+<tbody>
+<tr class="todo"><td class="c">3</td><td>Finalize methodology, algorithm descriptions, architecture and implementation workflow</td><td>Partly done</td><td>The report covers them in Sections 5, 7, 8 and 9, and Refined_Methodology updates the method stage by stage. The 16.11 version adds the Milestone 5 results (Sections 10 to 14). Left: review the five figures and decide on the Section 8.2 split-count sentence.</td></tr>
+<tr><td class="c">4</td><td>Define and justify the evaluation metrics appropriate to the project</td><td>Done</td><td>Section 10.2 defines ten indicators, and Section 10.1 of the 16.11 version now says why accuracy is not reported.</td></tr>
+<tr><td class="c">5</td><td>Interpret preliminary findings and document technical limitations</td><td>Done</td><td>Sections 10.2 and 12 of the report, now backed by Preliminary_Evaluation_Results and Limitations_Analysis (12 limits ranked High to Low).</td></tr>
+<tr><td class="c">6</td><td>Check consistency between research objectives, methodology and prototype implementation</td><td>Done</td><td>Section 13 gives a status for objectives O1 to O7, and Refined_Methodology Section 8 states what the evidence supports and what it does not. Check again after any later change.</td></tr>
+<tr class="todo"><td class="c">7</td><td>Proofread the literature review and methodology, ensure accurate citations</td><td>Partly done</td><td>The report's 29 references were checked and are real. Left: add the article numbers to S2 (24715) and S3 (17) and proofread the report. The literature review part is in Section 6.</td></tr>
+<tr><td class="c">New</td><td>Evaluation plan and development plan missing</td><td>Done</td><td>Section 14 of the 16.11 version: nine work packages (B1 to B9), each with a "done when" test, and six evaluation rules. Dates and owners are left out on purpose.</td></tr>
+</tbody>
+</table>
+<p class="meta">Days 1 and 2 of this column are literature review tasks (Section 6).</p>
+
+<h3>Prototype development</h3>
+<table>
+<colgroup><col style="width:6%"><col style="width:28%"><col style="width:11%"><col style="width:55%"></colgroup>
+<thead><tr><th>Day</th><th>Task</th><th>Status</th><th>What is left</th></tr></thead>
+<tbody>
+<tr><td class="c">1</td><td>Review prototype against all agreed MVP requirements</td><td>Done</td><td>Section 4 of the report gives each requirement a status, and every case in the test matrix names its requirement. Check again after any code change.</td></tr>
+<tr><td class="c">2</td><td>Execute functional tests on all completed core modules</td><td>Done</td><td>91 automated tests passed and 1 was skipped on 16 November. The test matrix lists 82 automated and 19 manual cases. The integrated test passed 10 of 10 cases with every part running together (docs/INTEGRATED_TEST_REPORT.pdf).</td></tr>
+<tr><td class="c">3</td><td>Test the system with representative input scenarios and edge cases</td><td>Done</td><td>Cases are marked positive, negative, boundary or failure. The 12-hour cap, events at session edges and overlapping sessions are tested (TC2, TC28), and the integrated test ran broken datasets, edge cases and a stopped database (IT5 to IT7).</td></tr>
+<tr><td class="c">4</td><td>Measure preliminary performance, such as accuracy, response time, reliability or task completion</td><td>Done</td><td>Section 10.2 and Preliminary_Evaluation_Results: detection results, 450 API calls with no error (the slowest 25.4 ms), engine memory of 233 to 464 MB at four sizes, and a reliability table. The integrated test added page load in a browser (sign-in page 657 ms, flagged list 222 ms) and task completion (6 of 6 steps).</td></tr>
+<tr><td class="c">5</td><td>Fix defects affecting core functionality or incorrect outputs</td><td>Done</td><td>Issues 1 to 7, 10, 12 and 14 are fixed (Section 12), and the assistant refuses questions it cannot answer. Also fixed on 16 November: a run request is no longer saved before its log entry, and the worker no longer stops when MongoDB is down. The open issues in Section 12 are limits planned for Capstone B.</td></tr>
+<tr><td class="c">6</td><td>Improve interface usability, validation, exception handling and result presentation</td><td>Done</td><td>Input checks and clear error messages exist (Section 8.2). The dashboard was reviewed on SPEDIA: two sessions of one user that start in the same minute looked alike, so the computer is now shown in the list, on the session page and on the user page. Checked on screenshots, not with users.</td></tr>
+<tr class="todo"><td class="c">7</td><td>Conduct a complete prototype demonstration and prepare evaluation evidence</td><td>Partly done</td><td>The evidence is ready: docs/DEMO.md and the screenshots on SPEDIA, nine evidence PDFs and the integrated test report. Left: the live demonstration itself.</td></tr>
+</tbody>
+</table>
+
+<h3>Submission items</h3>
+<table>
+<colgroup><col style="width:34%"><col style="width:11%"><col style="width:55%"></colgroup>
+<thead><tr><th>Item</th><th>Status</th><th>Where it is and what is left</th></tr></thead>
+<tbody>
+<tr class="todo"><td>Final methodology document, including architecture, algorithms, data flow and evaluation procedures</td><td>Partly done</td><td>The report has all four, and Refined_Methodology updates them. It still needs the figure review, the Milestone 5 updates and the final checks.</td></tr>
+<tr><td>Functional MVP covering the agreed core requirements</td><td>Done</td><td>It works from start to finish on generated data and on SPEDIA.</td></tr>
+<tr><td>Preliminary validation and performance evaluation results</td><td>Done</td><td>Section 10.2 and Preliminary_Evaluation_Results, on generated data only. No result on real data exists.</td></tr>
+<tr><td>Test report including successful tests, failed tests and corrective actions</td><td>Done</td><td>Section 10.3 of the 16.11 version points to Test_Case_Matrix, and Section 10.4 adds three failed checks with their corrective actions. Case B2 of the matrix is now true, because the 12-hour test was fixed. docs/INTEGRATED_TEST_REPORT.pdf adds 10 passed cases and five problems with their corrective actions.</td></tr>
+<tr class="todo"><td>Updated GitHub repository, screenshots and demonstration video or live demonstration</td><td>Partly done</td><td>The screenshots were retaken on SPEDIA on 16 November. Nawaf's branch is merged into ours, but ours is not pushed and main has neither. Left: push and merge, and the live demonstration.</td></tr>
+</tbody>
+</table>
+<p>Expected milestone: literature review and methodology completed, and the MVP validated through documented tests and preliminary evaluation. For the prototype and the report, the 16.11 version still needs the owner's review.</p>
+
+<h2>4. Task table 2: Prototype Feasibility Demonstration and Capstone A Consolidation</h2>
+
+<h3>Research and methodology</h3>
+<table>
+<colgroup><col style="width:6%"><col style="width:28%"><col style="width:11%"><col style="width:55%"></colgroup>
+<thead><tr><th>Day</th><th>Task</th><th>Status</th><th>What is left</th></tr></thead>
+<tbody>
+<tr class="todo"><td class="c">1</td><td>Conduct final consistency review of literature review, objectives and methodology</td><td>Open</td><td>Do it last. Check that the report, the Capstone report and the Milestone 5 PDFs agree with each other and with the objectives. Known differences: the proposal says five collections where the code now has seven, and the flag threshold is 19.3 or 8.1 in the Milestone 5 PDFs but 8.2 in the report.</td></tr>
+<tr class="todo"><td class="c">2</td><td>Finalize system design documentation, including architecture, components and database design</td><td>Partly done</td><td>Architecture (Section 5.1) and components (Section 5.3) are done. The database design is only a list of collection names, so add a short table of the seven collections from docs/DATABASE.md.</td></tr>
+<tr class="todo"><td class="c">3</td><td>Prepare a feasibility assessment covering technical practicality, resources and limitations</td><td>Partly done</td><td>The Milestone 5 PDFs measure time and memory at four data sizes and extrapolate about 22 minutes and 20 GB for the full CERT r4.2, and Limitations_Analysis covers the limits. Left: the resources (people, tools, cost) and a written assessment.</td></tr>
+<tr class="todo"><td class="c">4</td><td>Consolidate evaluation methods, preliminary findings and testing evidence</td><td>Mostly done</td><td>Sections 10 to 12 of the 16.11 version now hold the Milestone 5 methods, results and test evidence. Left: the owner's review.</td></tr>
+<tr class="todo"><td class="c">5</td><td>Identify work completed in Capstone A and remaining tasks for Capstone B</td><td>Mostly done</td><td>Section 14 of the 16.11 version lists the Capstone B work packages in priority order. Left: a short list of what Capstone A finished.</td></tr>
+<tr class="todo"><td class="c">6</td><td>Prepare Capstone A presentation covering problem, research gap, methodology and progress</td><td>Open</td><td>No slides exist yet.</td></tr>
+<tr class="todo"><td class="c">7</td><td>Conduct final review and prepare the Capstone A progress submission</td><td>Open</td><td>The Capstone report has Sections I to III. Sections IV to XII still hold the template's instructions (see Section 5 of this list).</td></tr>
+</tbody>
+</table>
+
+<h3>Prototype development</h3>
+<table>
+<colgroup><col style="width:6%"><col style="width:28%"><col style="width:11%"><col style="width:55%"></colgroup>
+<thead><tr><th>Day</th><th>Task</th><th>Status</th><th>What is left</th></tr></thead>
+<tbody>
+<tr><td class="c">1</td><td>Review prototype functionality against approved project requirements</td><td>Done</td><td>Same check as task table 1, Day 1. Repeated after the last code change: FR2 and FR3 in Section 4 now name the new tests.</td></tr>
+<tr><td class="c">2</td><td>Resolve remaining critical issues affecting the core workflow</td><td>Done</td><td>Issue 14 is fixed: a session joins the user's normal behavior only after it has ended. Also fixed: a run request saved before its log entry, and the worker stopping when MongoDB is down.</td></tr>
+<tr><td class="c">3</td><td>Conduct final integrated functional testing with representative test cases</td><td>Done</td><td>docs/INTEGRATED_TEST_REPORT.pdf: 10 of 10 cases passed after the last change, with pytest (91 passed, 1 skipped) and npm run build. Run it again with python scripts/integration_test.py.</td></tr>
+<tr><td class="c">4</td><td>Record outputs, evaluation results and any known system limitations</td><td>Done</td><td>Preliminary_Evaluation_Results and Limitations_Analysis. Quote one run everywhere: the flag threshold is 19.3 in the Day 3 evidence PDF, 8.1 in the Steps 1 to 3 summary and Refined_Methodology, and 8.2 in the report. The SPEDIA run now used by the prototype has threshold 35.5.</td></tr>
+<tr class="todo"><td class="c">5</td><td>Organize repository, installation instructions, dependencies and sample data</td><td>Partly done</td><td>The README has set-up and run steps, requirements.txt lists the packages and a script makes the generated sample data. The converted SPEDIA files (12 MB) are now part of the repository as sample data, with their source and licence (backend/data/spedia_cert/SOURCE.md). The Word reports are in word-reports/. Left: decide what in word-reports/ and docs/LOCAL_RUN_MANUAL.pdf goes into git, then push.</td></tr>
+<tr><td class="c">6</td><td>Prepare a structured live prototype demonstration and supporting screenshots</td><td>Done</td><td>docs/DEMO.md is rewritten for a live demonstration on SPEDIA, and all data screenshots were retaken on 16 November after a successful run from the dashboard.</td></tr>
+<tr class="todo"><td class="c">7</td><td>Demonstrate the complete MVP and document the next development priorities</td><td>Partly done</td><td>The next priorities are written and ranked (Refined_Methodology, B1 to B9, and Section 14 of the report). Left: the live demonstration itself.</td></tr>
+</tbody>
+</table>
+
+<h3>Final submission items</h3>
+<table>
+<colgroup><col style="width:34%"><col style="width:11%"><col style="width:55%"></colgroup>
+<thead><tr><th>Item</th><th>Status</th><th>Where it is and what is left</th></tr></thead>
+<tbody>
+<tr class="todo"><td>Complete, technically implementable methodology</td><td>Partly done</td><td>The report and Refined_Methodology, after the final checks.</td></tr>
+<tr class="todo"><td>Finalized system architecture, diagrams and requirements specification</td><td>Partly done</td><td>Report Sections 4 and 5 and Figures 1 to 5. The figures still wait for review.</td></tr>
+<tr><td>Functional prototype demonstrating the main proposed system workflow</td><td>Done</td><td>It works from start to finish on generated data and on SPEDIA.</td></tr>
+<tr class="todo"><td>Test cases, preliminary evaluation findings and feasibility assessment</td><td>Partly done</td><td>Test cases (Test_Case_Matrix) and findings (Preliminary_Evaluation_Results) exist. The written feasibility assessment is missing.</td></tr>
+<tr class="todo"><td>Source-code repository with README, installation instructions and demonstration evidence</td><td>Partly done</td><td>All of it exists on this laptop. Push the branch and merge it into main.</td></tr>
+<tr class="todo"><td>Capstone A progress report and presentation</td><td>Open</td><td>Sections IV to XII of the Capstone report and the slides are missing.</td></tr>
+<tr><td>Clearly defined development and evaluation plan for Capstone B</td><td>Done</td><td>Section 14 of the 16.11 version, without dates or owners on purpose.</td></tr>
+</tbody>
+</table>
+<p>Expected milestone: show that the system is feasible through a working prototype, supported by a completed literature review, a justified methodology and documented preliminary testing.</p>
+
+<h2>5. Capstone report: sections still to write</h2>
+<p>The file is Capstone_report Fall26-27.docx in Downloads, started by Nawaf on 9 November. Its body must stay within 8 to 10 pages, not counting the references and the appendix.</p>
+<table>
+<colgroup><col style="width:24%"><col style="width:38%"><col style="width:38%"></colgroup>
+<thead><tr><th>Section</th><th>What the template asks</th><th>What can be reused</th></tr></thead>
+<tbody>
+<tr class="todo"><td>IV Design Thinking Process</td><td>The IBM Design Thinking Training, the steps followed and the first sketches.</td><td>Nothing yet. Complete the training first.</td></tr>
+<tr class="todo"><td>V Analysis</td><td>System idea and goals with a diagram, requirements gathering (surveys, interviews, comparison with similar systems) and the requirements.</td><td>Figures 2 and 4, report Sections 4 and 6. The product comparison in Group7_Research_and_Methodology_long_version.docx (Downloads) can start the comparison.</td></tr>
+<tr class="todo"><td>VI Design</td><td>Software design and database design. Hardware design only if hardware is used.</td><td>Figure 1, report Section 5.3 and docs/DATABASE.md.</td></tr>
+<tr class="todo"><td>VII Prototype</td><td>Development environment, and prototype details with screenshots.</td><td>The README and docs/screenshots.</td></tr>
+<tr class="todo"><td>VIII Security Risk Analysis and Mitigation</td><td>Security objectives, threats mapped to assets, and the security services.</td><td>Report Section 11, docs/SECURITY.md and Limitations_Analysis.</td></tr>
+<tr class="todo"><td>IX Testing Plan</td><td>Functional, non-functional and user acceptance test plans.</td><td>Test_Case_Matrix and report Sections 10.3 and 10.4. No user acceptance plan exists yet.</td></tr>
+<tr class="todo"><td>X Project Management</td><td>Gantt chart, budget, and team members with their tasks.</td><td>Nothing yet.</td></tr>
+<tr class="todo"><td>XI Conclusion and Future Plan</td><td>Summary of the report and the Capstone B plan.</td><td>Refined_Methodology Sections 5 and 6.</td></tr>
+<tr class="todo"><td>XII References</td><td>IEEE format.</td><td>The report uses another reference style, so the list must be converted.</td></tr>
+</tbody>
+</table>
+
+<h2>6. Literature review (kept apart)</h2>
+<p>These tasks belong to the literature review, which is outside the main focus. They are listed so nothing is lost.</p>
+<table>
+<colgroup><col style="width:34%"><col style="width:11%"><col style="width:55%"></colgroup>
+<thead><tr><th>Task</th><th>Status</th><th>What is left</th></tr></thead>
+<tbody>
+<tr class="todo"><td>Revise literature review based on supervisor feedback (task table 1, Day 1)</td><td>Open</td><td>Get the feedback first. It is not in the repository.</td></tr>
+<tr class="todo"><td>Finalize critical comparison of existing approaches and clearly articulate the research gap (task table 1, Day 2)</td><td>Partly done</td><td>The review has a comparison matrix (Section 7), compared findings (Section 9) and the gaps G1 to G5 (Section 11). Sections 5.7 and 11 still call the gaps "preliminary". The report's Section 3 already uses the same gaps.</td></tr>
+<tr class="todo"><td>Proofread the literature review, ensure accurate citations (task table 1, Day 7)</td><td>Open</td><td>Check its 29 references the way the report's references were checked, and use one set of search strings (the group's documents have two).</td></tr>
+<tr class="todo"><td>Completed literature review with at least 20 relevant scholarly references (task table 1 submission)</td><td>Partly done</td><td>It has 29 references for 27 studies. It still needs the feedback revision.</td></tr>
+<tr class="todo"><td>Final literature review with clearly established research gaps (task table 2 final submission)</td><td>Partly done</td><td>Make the gaps final after the feedback.</td></tr>
+</tbody>
+</table>
+
+<h2>7. Not known yet</h2>
+<p>The image and the repository do not show when each task table is due, who owns each row, or whether the demonstration will be a video or live.</p>
+
+</body>
+</html>
